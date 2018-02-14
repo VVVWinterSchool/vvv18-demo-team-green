@@ -1,0 +1,22 @@
+<application>
+  <name>check clasification system</name>
+
+  <module>
+      <name>yarplogger</name>
+      <parameters>--start</parameters>
+      <node>localhost</node>
+  </module>
+
+
+  <module>
+      <name>gzserver</name>
+      <parameters>-slibgazebo_yarp_clock.so icub_simple_fixed_world/icub_simple_fixed.world</parameters>
+      <node>localhost</node>
+  </module>
+
+   <module>
+      <name>gzclient</name>
+      <parameters></parameters>
+      <node>localhost</node>
+  </module>
+</application>

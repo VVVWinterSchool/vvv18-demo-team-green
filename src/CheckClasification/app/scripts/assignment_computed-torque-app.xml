@@ -1,0 +1,20 @@
+<application>
+
+  <name>Chekc clasification app</name>
+
+  <dependencies>
+      <port>/yarplogger</port>
+      <port>/icubSim/right_leg/stateExt:o</port>
+      <port>/icubSim/left_leg/stateExt:o</port>
+      <port>/icubSim/right_arm/stateExt:o</port>
+      <port>/icubSim/left_arm/stateExt:o</port>
+      <port>/icubSim/torso/stateExt:o</port>
+  </dependencies>
+
+  <module>
+      <name>assignment_computed-torque</name>
+      <environment>YARP_FORWARD_LOG_ENABLE=1;YARP_CLOCK=/clock;YARP_ROBOT_NAME=iCubGazeboV2_5</environment>
+      <node>localhost</node>
+  </module>
+
+</application>
