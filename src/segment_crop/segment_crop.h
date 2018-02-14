@@ -14,8 +14,32 @@
 
 //#include "closestBlob_IDL.h"
 
+class CustomProcessor : public yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelMono> >
+{
+    std::string moduleName;
+    yarp::os::RpcClient                                                 queryClient;
+    yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> >    inRGBPort;
+    yarp::os::BufferedPort<yarp::os::Bottle>                            outStuffPort;
+
+public:
+    CustomProcessor(const std::string &moduleName);
+    bool open();
+    void close();
+    void interrupt();
+    virtual void onRead(yarp::sig::ImageOf<yarp::sig::PixelMono> &dispImage );
+};
+
 class Module : public yarp::os::RFModule //, public closestBlob_IDL
 {
+
+    std::string moduleName;
+
+    //yarp::os::RpcServer rpcPort;
+    yarp::os::ResourceFinder        *rf;
+    CustomProcessor                 *inDispPort;
+    friend class                    inDispPort;
+    bool                            closing;
+
     
 public:
     bool configure(yarp::os::ResourceFinder &rf);
@@ -25,3 +49,5 @@ public:
     bool updateModule();
 
 };
+
+
