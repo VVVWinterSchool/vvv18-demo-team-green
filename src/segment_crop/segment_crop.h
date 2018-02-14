@@ -20,8 +20,10 @@ class CustomProcessor : public yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::s
     yarp::os::RpcClient                                                 queryClient;
     yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> >    inRGBPort;
     yarp::os::BufferedPort<yarp::os::Bottle>                            outStuffPort;
+    yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> >    outDebugPortRGB;
 
 public:
+    int                             threshold_value = 0;
     CustomProcessor(const std::string &moduleName);
     bool open();
     void close();
@@ -34,7 +36,7 @@ class Module : public yarp::os::RFModule //, public closestBlob_IDL
 
     std::string moduleName;
 
-    //yarp::os::RpcServer rpcPort;
+    yarp::os::RpcServer             rpcPort;
     yarp::os::ResourceFinder        *rf;
     CustomProcessor                 *inDispPort;
     friend class                    inDispPort;
@@ -43,10 +45,12 @@ class Module : public yarp::os::RFModule //, public closestBlob_IDL
     
 public:
     bool configure(yarp::os::ResourceFinder &rf);
+    bool respond(const yarp::os::Bottle &command, yarp::os::Bottle &reply);
     bool close();
     bool quit();
     double getPeriod();
     bool updateModule();
+
 
 };
 

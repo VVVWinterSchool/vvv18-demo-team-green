@@ -8,8 +8,18 @@ bool Module::configure(yarp::os::ResourceFinder &rf)
     inDispPort = new CustomProcessor(moduleName);
     closing = false;
 
+    rpcPort.open("/" + moduleName + "/service");
+    attach(rpcPort);
+    inDispPort->useCallback();
     inDispPort->open();
 
+    return true;
+}
+
+bool Module::respond(const yarp::os::Bottle &command, yarp::os::Bottle &reply)
+{
+    inDispPort->threshold_value = command.get(0).asInt();
+    reply.addString("ack");
     return true;
 }
 
@@ -44,25 +54,71 @@ CustomProcessor::CustomProcessor(const std::string &moduleName)
 
 bool CustomProcessor::open()
 {
-    this->useCallback();
+    //this->useCallback();
     this->BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelMono> >::open( "/" + moduleName + "/disparity:i" );
-    inRGBPort.open("/" + moduleName + "/RGBimage:i");
+    //inRGBPort.open("/" + moduleName + "/RGBimage:i");
     outStuffPort.open("/"+ moduleName + "/crops:o");
+    outDebugPortRGB.open("/"+ moduleName + "/debugRGB:o");
 }
 
 void CustomProcessor::close()
 {
+    outDebugPortRGB.close();
     outStuffPort.close();
-    inRGBPort.close();
-    this->close();
+    //inRGBPort.close();
+    this->BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelMono> >::close();
 }
 
 void CustomProcessor::interrupt()
 {
-    this->interrupt();
+    BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelMono> >::interrupt();
 }
 
 void CustomProcessor::onRead(yarp::sig::ImageOf<yarp::sig::PixelMono> &dispImage )
 {
+    yarp::sig::ImageOf<yarp::sig::PixelRgb> &outDebugRGB = outDebugPortRGB.prepare();
+    yarp::sig::ImageOf<yarp::sig::PixelRgb> *inRGB = inRGBPort.read();
+
+    outDebugRGB.resize(dispImage.width(),dispImage.height());
+    outDebugRGB.zero();
+
+    cv::Mat disp = cv::cvarrToMat((IplImage*)dispImage.getIplImage());
+    cv::Mat processed_disp = disp.clone();
+
+
+    cv::GaussianBlur(processed_disp,processed_disp,cv::Size(3, 3),2,2);
+    cv::dilate(processed_disp,processed_disp,cv::Mat(),cv::Point(-1,-1),2, cv::BORDER_CONSTANT, cv::morphologyDefaultBorderValue());
+    cv::erode(processed_disp,processed_disp,cv::Mat(),cv::Point(-1,-1),3,cv::BORDER_CONSTANT, cv::morphologyDefaultBorderValue());
+
+    cv::threshold(processed_disp,processed_disp,threshold_value,255,cv::THRESH_BINARY);
+
+    cv::cvtColor(processed_disp,processed_disp,CV_GRAY2RGB);
+
+    //cv::rectangle(disp,cv::Rect(disp.cols/2, disp.rows/2, disp.cols/2 + disp.cols/4, disp.rows/2 + disp.rows/4),cv::Scalar(255,0,0));
+
+    cv::resize(processed_disp,processed_disp,cv::Size(outDebugRGB.width(),outDebugRGB.height()));
+    IplImage out = processed_disp;
+
+    cvCopy(&out,(IplImage*) outDebugRGB.getIplImage());
+    outDebugPortRGB.write();
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
