@@ -2,6 +2,7 @@
 
 Structure of the repository:
   - app/script: .xml files
+  - doc: documentation
   - misc: miscellaneous materials
   - src: module directories; please clone and add each module
 
