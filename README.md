@@ -40,8 +40,8 @@ Structure of the repository:
 
 ```
 
-# State diagram 
-
-![State diagram of the application](/doc/img/Diagramme_state.png)
-Format: ![State diagram of the application](url)
+## State diagram 
+<img src="/doc/img/Diagramme_state.png" alt="State diagram of the application" width="50%" style="display: block;
+    margin-left: auto;
+    margin-right: auto;">
 
