@@ -7,11 +7,17 @@ bool Module::configure(yarp::os::ResourceFinder &rf)
     setName(moduleName.c_str());
     inDispPort = new CustomProcessor(moduleName);
     closing = false;
+    inDispPort->threshold_value = 70;
 
     rpcPort.open("/" + moduleName + "/service");
     attach(rpcPort);
     inDispPort->useCallback();
     inDispPort->open();
+
+    if (inDispPort->queryClient.getOutputCount()==0)
+    {
+
+    }
 
     return true;
 }
@@ -50,6 +56,7 @@ bool Module::updateModule()
 CustomProcessor::CustomProcessor(const std::string &moduleName)
 {
     this->moduleName = moduleName;
+    queryClient.open("/"+moduleName+"/rpcSFM");
 }
 
 bool CustomProcessor::open()
@@ -91,6 +98,22 @@ void CustomProcessor::onRead(yarp::sig::ImageOf<yarp::sig::PixelMono> &dispImage
     cv::erode(processed_disp,processed_disp,cv::Mat(),cv::Point(-1,-1),3,cv::BORDER_CONSTANT, cv::morphologyDefaultBorderValue());
 
     cv::threshold(processed_disp,processed_disp,threshold_value,255,cv::THRESH_BINARY);
+
+    std::vector<std::vector<cv::Point>> contours;
+    cv::findContours(processed_disp,contours,CV_RETR_LIST,CV_CHAIN_APPROX_NONE);
+
+    cv::Rect bounding_box_1;
+    cv::Rect bounding_box_2;
+    yarp::sig::Vector  object_1;
+    yarp::sig::Vector  object_2;
+
+    if(contours.size() == 2)
+    {
+        bounding_box_1 = cv::boundingRect(contours[0]);
+        bounding_box_2 = cv::boundingRect(contours[1]);
+
+
+    }
 
     cv::cvtColor(processed_disp,processed_disp,CV_GRAY2RGB);
 

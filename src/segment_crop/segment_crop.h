@@ -6,7 +6,7 @@
 #include <yarp/os/Time.h>
 #include <yarp/os/LogStream.h>
 #include <yarp/os/Semaphore.h>
-#include <yarp/sig/Image.h>
+#include <yarp/sig/all.h>
 #include <yarp/os/RpcClient.h>
 
 #include <opencv2/core/core.hpp>
@@ -17,13 +17,15 @@
 class CustomProcessor : public yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelMono> >
 {
     std::string moduleName;
-    yarp::os::RpcClient                                                 queryClient;
     yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> >    inRGBPort;
     yarp::os::BufferedPort<yarp::os::Bottle>                            outStuffPort;
     yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> >    outDebugPortRGB;
 
 public:
-    int                             threshold_value = 0;
+    int                             threshold_value;
+    yarp::os::RpcClient             queryClient;
+
+
     CustomProcessor(const std::string &moduleName);
     bool open();
     void close();
