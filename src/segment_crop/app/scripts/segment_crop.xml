@@ -1,46 +1,50 @@
 <application>
-    <name>Closest Blob in Image</name>
+    <name>Closest object segmenter</name>
 
     <dependencies>
     </dependencies>
 
     <module>
-        <name>yarpdataplayer</name>
+        <name>SFM</name>
         <node>localhost</node>
-    </module>
+    </module>    	
     <module>
-        <name>closest-blob</name>
+        <name>segment_crop</name>
         <node>localhost</node>
-    </module>
-    <module>
-        <name>yarpview</name>
-        <node>localhost</node>
-        <parameters>--name /output --x 0 --y 0 --RefreshTime 33 </parameters>
     </module>
     <module>
         <name>yarpview</name>
         <node>localhost</node>
-        <parameters>--name /crop --x 300 --y 0 --RefreshTime 33 </parameters>
+        <parameters>--name /processed_disp --x 0 --y 0</parameters>
     </module>
+    <module>
+        <name>yarpview</name>
+        <node>localhost</node>
+        <parameters>--name /disp_map --x 300 --y 0</parameters>
+    </module>
+	
+		
+			
+
 
     <connection>
         <from>/SFM/disp:o</from>
-        <to>/closest-blob/disparity:i</to>
+        <to>/segment_crop/disparity:i</to>
         <protocol>tcp</protocol>
     </connection>
     <connection>
-        <from>/icub/camcalib/left/out</from>
-        <to>/closest-blob/image:i</to>
+        <from>/segment_crop/debugRGB:o</from>
+        <to>/processed_disp</to>
         <protocol>tcp</protocol>
     </connection>
     <connection>
-        <from>/closest-blob/image:o</from>
-        <to>/output</to>
+        <from>/SFM/disp:o</from>
+        <to>/disp_map</to>
         <protocol>tcp</protocol>
     </connection>
     <connection>
-        <from>/closest-blob/crop:o</from>
-        <to>/crop</to>
+        <from>/segment_crop/rpcSFM</from>
+        <to>/SFM/rpc</to>
         <protocol>tcp</protocol>
     </connection>
 </application>

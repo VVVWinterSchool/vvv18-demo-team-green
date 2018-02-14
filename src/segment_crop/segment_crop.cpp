@@ -93,14 +93,13 @@ void CustomProcessor::onRead(yarp::sig::ImageOf<yarp::sig::PixelMono> &dispImage
     cv::Mat disp = cv::cvarrToMat((IplImage*)dispImage.getIplImage());
     cv::Mat processed_disp = disp.clone();
 
-
     cv::GaussianBlur(processed_disp,processed_disp,cv::Size(3, 3),2,2);
-    cv::dilate(processed_disp,processed_disp,cv::Mat(),cv::Point(-1,-1),2, cv::BORDER_CONSTANT, cv::morphologyDefaultBorderValue());
+    cv::dilate(processed_disp,processed_disp,cv::Mat(),cv::Point(-1,-1),3, cv::BORDER_CONSTANT, cv::morphologyDefaultBorderValue());
     cv::erode(processed_disp,processed_disp,cv::Mat(),cv::Point(-1,-1),3,cv::BORDER_CONSTANT, cv::morphologyDefaultBorderValue());
 
     cv::threshold(processed_disp,processed_disp,threshold_value,255,cv::THRESH_BINARY);
 
-    std::vector<std::vector<cv::Point>> contours;
+    std::vector<std::vector<cv::Point> > contours;
     cv::findContours(processed_disp,contours,CV_RETR_LIST,CV_CHAIN_APPROX_NONE);
 
     cv::Rect bounding_box_1;
@@ -113,11 +112,14 @@ void CustomProcessor::onRead(yarp::sig::ImageOf<yarp::sig::PixelMono> &dispImage
     centre_1.resize(2);
     centre_2.resize(2);
 
-
-    if(contours.size() == 2)
+    if(contours.size() == 2 )
     {
         bounding_box_1 = cv::boundingRect(contours[0]);
         bounding_box_2 = cv::boundingRect(contours[1]);
+
+        cv::rectangle(processed_disp, bounding_box_1, cv::Scalar(0,255,0), 3);
+        cv::rectangle(processed_disp, bounding_box_2, cv::Scalar(0,0,255), 3);
+
         centre_1[0] = (bounding_box_1.tl().x + bounding_box_1.br().x)/2;
         centre_1[1] = (bounding_box_1.tl().y + bounding_box_1.br().y)/2;
 
