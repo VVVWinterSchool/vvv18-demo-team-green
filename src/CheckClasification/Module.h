@@ -42,7 +42,7 @@ class Module : public yarp::os::RFModule
     yarp::sig::Vector *referencePositionsInRad;
     yarp::os::BufferedPort<yarp::sig::Vector> inPort;
     yarp::os::BufferedPort<yarp::sig::Vector> externalForcesPort;
-    yarp::sig::Vector externalForces(8);
+    yarp::sig::Vector externalForces;
 
     //write
     yarp::sig::Vector errorInRad;
