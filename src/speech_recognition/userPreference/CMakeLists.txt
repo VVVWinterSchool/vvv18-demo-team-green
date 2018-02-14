@@ -22,9 +22,9 @@ list(APPEND CMAKE_MODULE_PATH ${YARP_MODULE_PATH})
 
 # building 
 include_directories(${YARP_INCLUDE_DIRS})
-add_executable(tutorial_RFModule-simple ${CMAKE_SOURCE_DIR}/main.cpp)
-target_link_libraries(tutorial_RFModule-simple ${YARP_LIBRARIES})
-install(TARGETS tutorial_RFModule-simple DESTINATION bin)
+add_executable(userPreference ${CMAKE_SOURCE_DIR}/main.cpp)
+target_link_libraries(userPreference ${YARP_LIBRARIES})
+install(TARGETS userPreference DESTINATION bin)
 
 icubcontrib_add_uninstall_target()
 

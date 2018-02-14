@@ -19,3 +19,12 @@ If the label match the database, the label is send to the classifier trough [ */
   <li><b>/userPrefence/user_label/rpc</b>  Port where the correct user *label*(string) is send to the classifier</li>
   <li><b>/userPrefence/control/rpc:i</b>  Input port for TTS Synthesis</li>
 </ul> 
+
+*rpc command*
+
+<ul>/userPrefence/control/rpc:i
+  <li><b>"send"</b>  Set the module in 'sendind' configuration</li>
+</ul> 
+
+
+
