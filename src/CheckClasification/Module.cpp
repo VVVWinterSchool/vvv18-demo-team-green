@@ -82,11 +82,13 @@ bool Module::updateModule ()
     if (externalForces(0) > threshold)
     {
         outbot.addInt(1);
+        yInfo() << "happy!";
         outPutFlagPort.write();
 
     }else if (externalForces(0) < -threshold)
     {
         outbot.addInt(0);
+        yInfo() << "sad!";
         outPutFlagPort.write();
     }else{
         //Do nothing
