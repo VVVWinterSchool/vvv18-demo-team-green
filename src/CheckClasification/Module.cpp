@@ -53,7 +53,7 @@ double Module::getPeriod () { return 0.01; }
 bool Module::updateModule ()
 {
     // FILL IN THE CODE
-    externalForces= inPort.read();
+    externalForces= externalForcesPort.read();
 
     if (externalForces == NULL)
     {
