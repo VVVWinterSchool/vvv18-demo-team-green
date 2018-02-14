@@ -22,6 +22,6 @@ If the label match the database, the label is send to the classifier trough [ */
 
 <ul>
   <li><b>/userPrefence/text_from_speech:i</b>  Output recognised word by the STT (speak to text) engine provided by yarpjs</li>
-  <li><b>/userPrefence/user_label:rpc_out</b>  Port where the correct user *label*(string) is send to the classifier</li>
-  <li><b>/userPrefence/control:rpc_in</b>  Input port for TTS Synthesis</li>
+  <li><b>/userPrefence/user_label/rpc</b>  Port where the correct user *label*(string) is send to the classifier</li>
+  <li><b>/userPrefence/control/rpc:i</b>  Input port for TTS Synthesis</li>
 </ul> 
