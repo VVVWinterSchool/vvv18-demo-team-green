@@ -39,3 +39,9 @@ Structure of the repository:
                          .:.//:+. `.... `+soodMMMMMMMMNdmdmNNNNMMMMMMMMMMNmmyoydmmmmdyshdMNNMMMMMMMMN
 
 ```
+
+# State diagram 
+
+![State diagram of the application](/doc/img/Diagramme_state.png)
+Format: ![State diagram of the application](url)
+
