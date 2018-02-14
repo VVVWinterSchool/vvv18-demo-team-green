@@ -30,6 +30,7 @@ class Module : public yarp::os::RFModule
     yarp::dev::IControlMode2     *imod{nullptr};
     yarp::dev::ITorqueControl    *itrq{nullptr};
 
+
     // FILL IN THE CODE
     // hint: what attributes you need?
     // Quantities used by the control
@@ -40,6 +41,8 @@ class Module : public yarp::os::RFModule
     yarp::sig::Vector gravityCompensation;
     yarp::sig::Vector *referencePositionsInRad;
     yarp::os::BufferedPort<yarp::sig::Vector> inPort;
+    yarp::os::BufferedPort<yarp::sig::Vector> externalForcesPort;
+    yarp::sig::Vector *externalForces;
 
     //write
     yarp::sig::Vector errorInRad;
