@@ -110,6 +110,10 @@ void CustomProcessor::onRead(yarp::sig::ImageOf<yarp::sig::PixelMono> &dispImage
     yarp::sig::Vector  object_1;
     yarp::sig::Vector  object_2;
 
+    centre_1.resize(2);
+    centre_2.resize(2);
+
+
     if(contours.size() == 2)
     {
         bounding_box_1 = cv::boundingRect(contours[0]);
