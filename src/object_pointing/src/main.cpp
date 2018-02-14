@@ -19,6 +19,8 @@
 #include <yarp/dev/CartesianControl.h>
 #include <yarp/dev/PolyDriver.h>
 
+#include <yarp/os/BufferedPort.h>
+
 #define CTRL_THREAD_PER     0.02    // [s]
 #define PRINT_STATUS_PER    1.0     // [s]
 #define MAX_TORSO_PITCH     30.0    // [deg]
@@ -30,9 +32,11 @@ using namespace yarp::sig;
 using namespace yarp::math;
 
 
-class CtrlThread: public RateThread
+class CtrlModule: public RFModule
 {
-protected:
+    BufferedPort<Bottle> inputPort;
+    BufferedPort<Bottle> outputPort;
+
     PolyDriver         client;
     ICartesianControl *arm;
 
@@ -44,18 +48,22 @@ protected:
     double t;
     double t0;
     double t1;
+    double trajectoryTime = 1.0;
+    int rateThread = 1000; // 1s
+    double fingerAddedLength;
+
+    bool threadCalled = false;
 
 public:
-    CtrlThread() : RateThread(1000) { }
 
-    void extendIndexFingerLength()
+    void extendIndexFingerLength(double lengthToAdd)
     {
         yInfo()<<"Index finger length extention (attachTipFrame)... ";
         yarp::sig::Vector position(3);
         // Vector in axis-angle representation
         yarp::sig::Vector orientation(4);
 
-        position[0] = 0.1; // in meters
+        position[0] = lengthToAdd - 0.1; //0.1; // in meters
         position[1] = -0.02;
         position[2] = 0.0;
 
@@ -74,12 +82,196 @@ public:
     {
         yInfo()<<"Pointing finger to object... ";
         arm->goToPositionSync(position);
+
+        bool motion_done;
+        arm->checkMotionDone(&motion_done);
+        while (!motion_done)
+        {
+            yInfo()<<"Waiting for motion to finish...";
+            Time::delay(1.0);
+            arm->checkMotionDone(&motion_done);
+        }
+
         yInfo()<<"done!";
     }
 
-
-    virtual bool threadInit()
+    yarp::sig::Vector getShoulderPosition()
     {
+        int linkID = 4; // or 5
+        yarp::sig::Vector x, o;
+        arm->getPose(linkID, x, o);
+        yInfo()<<"Shoulder position: "<<x.toString();
+        // should be around 0, 20,40
+        return x;
+    }
+
+    // TODO FINISH!!!
+    yarp::sig::Vector getClosestReachablePointToObject(yarp::sig::Vector objectPosition,
+                                                       yarp::sig::Vector shoulderPosition,
+                                                       double armLength)
+    {
+        yarp::sig::Vector closestPoint(3);
+
+        yarp::sig::Vector lineCoeffs(3);
+        yarp::sig::Vector lineOffsets(3);
+        lineCoeffs[0] = shoulderPosition[0] - objectPosition[0];
+        lineCoeffs[1] = shoulderPosition[1] - objectPosition[1];
+        lineCoeffs[2] = shoulderPosition[2] - objectPosition[2];
+
+        // Compute the line offsets
+        linesOffsets[0] = ;
+        linesOffsets[1] = ;
+        linesOffsets[2] = ;
+
+        // Compute the intersection of the line with the sphre centered on the shoulder
+        closestPoint[0] = ;
+        closestPoint[1] = ;
+        closestPoint[2] = ;
+
+//        yarp::sig::Vector
+    }
+
+    double getArmLength()
+    {
+        return 0.4;
+    }
+
+
+
+    // Tells if a 3d position is reachable by the robot's arm
+    bool isInsideReachableSphere(yarp::sig::Vector objectPosition)
+    {
+        yarp::sig::Vector shoulderPosition = getShoulderPosition();
+        double distanceFromShoulderToObject = getInterPointDistance(shoulderPosition, objectPosition);
+        double armLength = getArmLength();
+
+        if (distanceFromShoulderToObject < armLength)
+        {
+            return true;
+        }
+        else // object out of reach
+        {
+            return false;
+        }
+    }
+
+    double getInterPointDistance(yarp::sig::Vector p1, yarp::sig::Vector p2)
+    {
+        return std::sqrt(
+                    std::pow(p1[0] - p2[0], 2) +
+                    std::pow(p1[1] - p2[1], 2) +
+                    std::pow(p1[2] - p2[2], 2));
+    }
+
+    virtual void run()
+    {
+        if (!threadCalled)
+        {
+            threadCalled = true;
+
+            t=Time::now();
+            // Generate a new target every (N) milliseconds
+            generateTarget();
+
+            bool objectIsInsideReachableSphere = isInsideReachableSphere(objectPosition);
+
+            if (objectIsInsideReachableSphere)
+            {
+                extendIndexFingerLength(lengthToAdd);
+                pointIndexFingerToTarget(objectPosition);
+                extendIndexFingerLength(-lengthToAdd);
+            }
+            else
+            {
+
+            }
+
+
+            // some verbosity
+            //printStatus();
+        }
+
+    }
+
+//    void printStatus()
+//    {
+//        if (t-t1>=PRINT_STATUS_PER)
+//        {
+//            Vector x,o,xdhat,odhat,qdhat;
+
+//            // we get the current arm pose in the
+//            // operational space
+//            if (!arm->getPose(x,o))
+//                return;
+
+//            // we get the final destination of the arm
+//            // as found by the solver: it differs a bit
+//            // from the desired pose according to the tolerances
+//            if (!arm->getDesired(xdhat,odhat,qdhat))
+//                return;
+
+//            double e_x=norm(xdhat-x);
+//            double e_o=norm(odhat-o);
+
+//            yInfo()<<"+++++++++";
+//            yInfo()<<"xd          [m] = "<<xd.toString();
+//            yInfo()<<"xdhat       [m] = "<<xdhat.toString();
+//            yInfo()<<"x           [m] = "<<x.toString();
+//            yInfo()<<"od        [rad] = "<<od.toString();
+//            yInfo()<<"odhat     [rad] = "<<odhat.toString();
+//            yInfo()<<"o         [rad] = "<<o.toString();
+//            yInfo()<<"norm(e_x)   [m] = "<<e_x;
+//            yInfo()<<"norm(e_o) [rad] = "<<e_o;
+//            yInfo()<<"---------";
+
+//            t1=t;
+//        }
+//    }
+
+
+    void generateTarget()
+    {
+        // translational target part: a circular trajectory
+        // in the yz plane centered in [-0.3,-0.1,0.1] with radius=0.1 m
+        // and frequency 0.1 Hz
+
+        double MAX_DIST = - 1.5;
+        double MIN_DIST = - 0.2;
+
+        //xd[0] = std::min((std::rand() * MAX_DIST), MIN_DIST);
+         xd[0]=-0.3;
+         xd[1]=-0.1+0.1*cos(2.0*M_PI*0.1*(t-t0));
+         xd[2]=+0.1+0.1*sin(2.0*M_PI*0.1*(t-t0));
+
+        yInfo()<<"New target: "<<xd[0]<<", "<<xd[1]<<", "<<xd[2];
+
+        // we keep the orientation of the left arm constant:
+        // we want the middle finger to point forward (end-effector x-axis)
+        // with the palm turned down (end-effector y-axis points leftward);
+        // to achieve that it is enough to rotate the root frame of pi around z-axis
+        od[0]=0.0; od[1]=0.0; od[2]=1.0; od[3]=0; //M_PI;
+    }
+
+    void limitTorsoPitch()
+    {
+        int axis=0; // pitch joint
+        double min, max;
+
+        // sometimes it may be helpful to reduce
+        // the range of variability of the joints;
+        // for example here we don't want the torso
+        // to lean out more than 30 degrees forward
+
+        // we keep the lower limit
+        arm->getLimits(axis,&min,&max);
+        arm->setLimits(axis,min,MAX_TORSO_PITCH);
+    }
+
+    virtual bool configure(ResourceFinder &rf)
+    {
+        // retrieve command line options
+        //double period=rf.check("period",Value(CTRL_THREAD_PER)).asDouble();
+
         // open a client interface to connect to the cartesian server of the simulator
         // we suppose that:
         //
@@ -94,23 +286,26 @@ public:
         //
         Property option;
         option.put("device","cartesiancontrollerclient");
-        option.put("remote","/icubSim/cartesianController/left_arm");
-        option.put("local","/cartesian_client/left_arm");
+        option.put("remote","/icubSim/cartesianController/right_arm");
+        option.put("local","/cartesian_client/right_arm");
 
         // let's give the controller some time to warm up
         bool ok=false;
         double t0=Time::now();
-        while (Time::now()-t0<10.0)
+        while ((Time::now()-t0<10.0) && (!ok))
         {
             // this might fail if controller
             // is not connected to solver yet
             if (client.open(option))
             {
                 ok=true;
-                break;
+                yInfo()<<"Successfully opened Cartesian controller!";
+                //break;
             }
-
-            Time::delay(1.0);
+            else
+            {
+                Time::delay(1.0);
+            }
         }
 
         if (!ok)
@@ -129,7 +324,7 @@ public:
         arm->storeContext(&startup_context_id);
 
         // set trajectory time
-        arm->setTrajTime(1.0);
+        arm->setTrajTime(trajectoryTime);
 
         // get the torso dofs
         Vector newDof, curDof;
@@ -151,27 +346,16 @@ public:
         xd.resize(3);
         od.resize(4);
 
+        fingerAddedLength = 0.1; //xd[0];
+        //extendIndexFingerLength(fingerAddedLength);
+
         yInfo()<<"Thread started successfully";
         t=t0=t1=Time::now();
 
         return true;
     }
 
-    virtual void run()
-    {
-        t=Time::now();
-
-        generateTarget();
-
-        // go to the target :)
-        // (in streaming)
-        arm->goToPose(xd,od);
-
-        // some verbosity
-        printStatus();
-    }
-
-    virtual void threadRelease()
+    virtual bool close()
     {
         // we require an immediate stop
         // before closing the client for safety reason
@@ -182,97 +366,7 @@ public:
         arm->restoreContext(startup_context_id);
 
         client.close();
-    }
 
-    void generateTarget()
-    {
-        // translational target part: a circular trajectory
-        // in the yz plane centered in [-0.3,-0.1,0.1] with radius=0.1 m
-        // and frequency 0.1 Hz
-        xd[0]=-0.3;
-        xd[1]=-0.1+0.1*cos(2.0*M_PI*0.1*(t-t0));
-        xd[2]=+0.1+0.1*sin(2.0*M_PI*0.1*(t-t0));
-
-        // we keep the orientation of the left arm constant:
-        // we want the middle finger to point forward (end-effector x-axis)
-        // with the palm turned down (end-effector y-axis points leftward);
-        // to achieve that it is enough to rotate the root frame of pi around z-axis
-        od[0]=0.0; od[1]=0.0; od[2]=1.0; od[3]=M_PI;
-    }
-
-    void limitTorsoPitch()
-    {
-        int axis=0; // pitch joint
-        double min, max;
-
-        // sometimes it may be helpful to reduce
-        // the range of variability of the joints;
-        // for example here we don't want the torso
-        // to lean out more than 30 degrees forward
-
-        // we keep the lower limit
-        arm->getLimits(axis,&min,&max);
-        arm->setLimits(axis,min,MAX_TORSO_PITCH);
-    }
-
-    void printStatus()
-    {
-        if (t-t1>=PRINT_STATUS_PER)
-        {
-            Vector x,o,xdhat,odhat,qdhat;
-
-            // we get the current arm pose in the
-            // operational space
-            if (!arm->getPose(x,o))
-                return;
-
-            // we get the final destination of the arm
-            // as found by the solver: it differs a bit
-            // from the desired pose according to the tolerances
-            if (!arm->getDesired(xdhat,odhat,qdhat))
-                return;
-
-            double e_x=norm(xdhat-x);
-            double e_o=norm(odhat-o);
-
-            yInfo()<<"+++++++++";
-            yInfo()<<"xd          [m] = "<<xd.toString();
-            yInfo()<<"xdhat       [m] = "<<xdhat.toString();
-            yInfo()<<"x           [m] = "<<x.toString();
-            yInfo()<<"od        [rad] = "<<od.toString();
-            yInfo()<<"odhat     [rad] = "<<odhat.toString();
-            yInfo()<<"o         [rad] = "<<o.toString();
-            yInfo()<<"norm(e_x)   [m] = "<<e_x;
-            yInfo()<<"norm(e_o) [rad] = "<<e_o;
-            yInfo()<<"---------";
-
-            t1=t;
-        }
-    }
-};
-
-
-
-class CtrlModule: public RFModule
-{
-protected:
-    CtrlThread thr;
-
-public:
-    virtual bool configure(ResourceFinder &rf)
-    {
-        // retrieve command line options
-        double period=rf.check("period",Value(CTRL_THREAD_PER)).asDouble();
-
-        // set the thread rate that is an integer accounting for [ms]
-        thr.setRate(int(period*1000.0));
-
-        return thr.start();
-    }
-
-    virtual bool close()
-    {
-        thr.stop();
         return true;
     }
 
@@ -286,6 +380,8 @@ public:
         yInfo()<<"Running happily...";
         return true;
     }
+
+
 };
 
 
@@ -298,6 +394,9 @@ int main(int argc, char *argv[])
         yError()<<"YARP doesn't seem to be available";
         return 1;
     }
+
+//            yarp::sig::Vector shoulderPosition = findShoulderPosition();
+
 
     CtrlModule mod;
     ResourceFinder rf;
