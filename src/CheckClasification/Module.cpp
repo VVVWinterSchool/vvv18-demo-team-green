@@ -52,17 +52,45 @@ double Module::getPeriod () { return 0.01; }
 
 bool Module::updateModule ()
 {
-    // FILL IN THE CODE
+    yarp::os::Bottle *flagin;
+
+    if (!go){
+        flagin = inPutFlagPort.read();
+        if (flagin == NULL)
+        {
+            yError() << "Error reading flag input port";
+           // return -1;
+        }
+        if (flagin->get(0).asInt() == 1){
+            go = true;
+        }
+    }
+
     yarp::sig::Vector *input= externalForcesPort.read();
 
     if (input == NULL)
     {
         yError() << "Error reading forcers port";
-        return -1;
+       // return -1;
     }
     
     externalForces = *input;
     yInfo() <<"external Forces: " << externalForces.toString();
+    double threshold = 1.0;
+
+    yarp::os::Bottle &outbot = outPutFlagPort.prepare();
+    if (externalForces(0) > threshold)
+    {
+        outbot.addInt(1);
+        outPutFlagPort.write();
+
+    }else if (externalForces(0) < -threshold)
+    {
+        outbot.addInt(0);
+        outPutFlagPort.write();
+    }else{
+        //Do nothing
+    }
 
     return true;
 }
@@ -82,7 +110,18 @@ bool Module::configure (yarp::os::ResourceFinder &rf)
         return -1;
     }
 
+    if (!inPutFlagPort.open("/CheckClassification/flagInput:i"))
+    {
+        yError() << "cannot open the flag input port";
+        return -1;
+    }
 
+    if (!outPutFlagPort.open("/CheckClassification/rigthArmForces:i"))
+    {
+        yError() << "cannot open the input port";
+        return -1;
+    }
+    go = false;
     return true;
 }
 
