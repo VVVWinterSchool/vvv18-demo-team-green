@@ -44,16 +44,39 @@ using namespace yarp::os;
 using namespace yarp::sig;
 using namespace yarp::math;
 
+#define RADIUS 256
+#define FLAG_UNIT_TEST true
+
 class ObjectRecognizerModule: public RFModule
 {
     protected:
 
         Semaphore              mutex;
+        bool                   voiceCommandTriggered;
+        bool                   noObject;
 
-        ObjectRecognizerPort   *imagePort;
+        BufferedPort<Image>    *imageInport;
+        BufferedPort<Bottle>   *segmentationInport;
+        RpcServer               userPrefInport;
 
-        Port                   rpcPort;
-        RpcServer              rpcPortHuman;
+        BufferedPort<Bottle>   *positionOutport;
+        Port                   port_out_view;
+        Port                   port_out_scores;
+
+        CaffeWrapper<float>    *caffe_wrapper;
+
+        vector<cv::Scalar>     colors;
+
+        string*                labels;
+        int                    n_classes;
+
+        int                    radius;
+
+        std::map<std::string, Bottle*> classifPosMap;
+        std::map<std::string, float> classifScoreMap;
+
+        bool classify(const cv::Mat& image_cropped, float& max_score, int& classObject);
+        bool cropImage(const cv::Mat& in_image, cv::Mat& out_image, cv::Point tl, cv::Point br);
 
     public:
 
@@ -63,7 +86,7 @@ class ObjectRecognizerModule: public RFModule
         bool close();
         bool respond(const Bottle &command, Bottle &reply);
         double getPeriod();
-        bool updateModule();
+        bool updateModule();     
 
 };
 

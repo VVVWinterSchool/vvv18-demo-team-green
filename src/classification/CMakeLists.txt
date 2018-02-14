@@ -54,10 +54,8 @@ include_directories(${Caffe_INCLUDE_DIRS})
 include_directories(${PROJECT_SOURCE_DIR}/${PROJECT_NAME}/include)
 
 set(folder_source ${PROJECT_NAME}/src/main.cpp
-                  ${PROJECT_NAME}/src/objectRecognizerModule.cpp
-                  ${PROJECT_NAME}/src/objectRecognizerPort.cpp)
+                  ${PROJECT_NAME}/src/objectRecognizerModule.cpp)
 set(folder_header ${PROJECT_NAME}/src/objectRecognizerModule.h
-                  ${PROJECT_NAME}/src/objectRecognizerPort.h
                   ${PROJECT_NAME}/include/CaffeWrapper.hpp
                   ${PROJECT_NAME}/include/definitions.h)
 
