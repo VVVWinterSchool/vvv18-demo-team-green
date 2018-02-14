@@ -69,11 +69,22 @@ public:
     {
         yInfo()<<"Responding to command rpc";
         //just echo back the command
-        if (command.get(0).asString()=="Send")
+        std::string str = command.get(0).asString();
+        cout<<"  get rpc : "<<str<<endl;
+        if ((str=="Send" || str=="send"))
         {
            //return false;
             readytoSend = true;
-            reply.addString("Activate userPreference behavior");
+            reply.addString("Activate userPreference reading");
+        }
+        else if((str =="Stop" || str =="stop"))
+        {
+            readytoSend = true;
+            reply.addString("Desactivate userPreference reading");
+        }
+        else
+        {
+            reply.addString("not an existing command");
         }
         return true;
     }
