@@ -24,6 +24,7 @@ If the label match the database, the label is send to the classifier trough [ */
 
 <ul>/userPrefence/control/rpc:i
   <li><b>"send"</b>  Set the module in 'sendind' configuration</li>
+  <li><b>"stop"</b>  Set the module in 'idle' configuration</li>
 </ul> 
 
 
