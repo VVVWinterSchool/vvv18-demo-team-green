@@ -53,13 +53,15 @@ double Module::getPeriod () { return 0.01; }
 bool Module::updateModule ()
 {
     // FILL IN THE CODE
-    externalForces= externalForcesPort.read();
+    Vector *input= externalForcesPort.read();
 
-    if (externalForces == NULL)
+    if (input == NULL)
     {
         yError() << "Error reading forcers port";
         return -1;
     }
+    
+    externalForces = *input;
     yInfo() <<"external Forces: " << externalForces->toString();
 
     return true;
@@ -78,8 +80,6 @@ bool Module::configure (yarp::os::ResourceFinder &rf)
         return -1;
     }
 
-
-    externalForces = new yarp::sig::Vector(6);
 
     return true;
 }
