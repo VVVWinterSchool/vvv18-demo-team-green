@@ -353,8 +353,8 @@ public:
         yDebug()<<"Setting gaze tracking mode true";
         igaze->setTrackingMode(true);
         yDebug()<<"Setting neck and eyes trajectory time";
-        igaze->setNeckTrajTime(0.6);
-        igaze->setEyesTrajTime(0.4);
+        igaze->setNeckTrajTime(2.0);
+        igaze->setEyesTrajTime(1.0);
 
         yInfo()<<"Setting trajectory time";
         // set trajectory time

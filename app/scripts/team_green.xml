@@ -1,0 +1,117 @@
+<application>
+
+  <name>Green Team</name>
+
+  <dependencies>
+     <!-- <port>/yarplogger</port>
+      <port>/icubSim/cartesianController/right_arm/state:o</port>
+      <!-- <port>/icubSim/cartesianController/right_arm/state:o</port>
+      <port>/icubSim/left_arm/state:o</port>
+      <port>/icubSim/right_arm/state:o</port>
+      <port>/icubSim/head/state:o</port>
+      <port>/icubSim/torso/state:o</port>
+       <port>/icubSim/cartesianController/right_arm/state:o</port>
+       <port>/icubSim/cartesianController/left_arm/state:o</port>
+       <port>/icubSim/cartesianController/head/state:o</port>
+<port>/icubSim/cartesianController/torso/state:o</port> -->
+      
+  </dependencies>
+
+    <!-- Modules -->
+    
+        <module>
+        <name>machine</name>
+        <node>localhost</node>
+    </module>
+    
+      <module>
+      <name>object_pointing</name>
+      <environment>YARP_FORWARD_LOG_ENABLE=1</environment>
+      <node>localhost</node>
+     
+     
+       <module>
+      <name>tutorial_joint-interface-position</name>
+      <environment>YARP_FORWARD_LOG_ENABLE=1</environment>
+      <node>localhost</node>
+        </module>
+        
+        	<module>
+      <name>userPreference</name>
+      <parameters>--period 1.0 --rpc_classifier_server /objectRecognizer/userLabel/rpc:i </parameters>
+      <environment>YARP_FORWARD_LOG_ENABLE=1</environment>
+      <node>localhost</node>
+  	</module>
+  
+  <module>
+      <name>node</name>
+      <parameters>server/run_server.js</parameters>
+      <workdir>YOUR_FOLDER_LOCATION/vvv18-demo-team-green/src/speech_recognition/yarpjs/</workdir>
+      <environment>YARP_FORWARD_LOG_ENABLE=1</environment>
+      <node>localhost</node>
+</module>
+
+    <!-- Connections -->
+
+ <connection>
+      <from>/wholeBodyDynamics/right_arm/cartesianEndEffectorWrench:o</from>
+      <to>/CheckClassification/rigthArmForces:i</to>
+      <protocol>udp</protocol>
+  </connection>
+  
+   <connection>
+      <from>/MachineModule/rpc:o</from>
+      <to>/MachineModule/rpc:i</to>
+      <protocol>tcp</protocol>
+  </connection>
+  
+     <connection>
+      <from>/objectPointing/position:o </from>
+      <to>/objectPointing/position:i</to>
+      <protocol>tcp</protocol>
+  </connection>
+  
+       <connection>
+      <from>/objectPointing/done:o </from>
+      <to>/high_five_ready:i</to>
+      <protocol>tcp</protocol>
+  </connection>
+  
+  	<connection>
+    	<from>/userPreference/control/rpc:o</from>
+    	<to>/userPreference/control/rpc:i</to>
+    	<protocol>tcp</protocol>
+	</connection>
+  	
+    <connection>
+			<from>/yarpjs/speech/rec:o</from>
+			<to>/userPreference/text_from_speech:i</to>
+			<protocol>tcp</protocol>
+	</connection>
+
+	<connection>
+		<from>/userPreference/user_label/rpc:o</from>
+		<to>/objectRecognizer/userLabel/rpc:i </to>
+		<protocol>tcp</protocol>
+</connection>
+
+	<connection>
+		<from>/position:o</from>
+		<to>/position:i </to>
+		<protocol>tcp</protocol>
+</connection>
+
+	<connection>
+		<from>/checkClassification/flag:o</from>
+		<to>/CheckClassification/flagInput:i </to>
+		<protocol>tcp</protocol>
+</connection>
+
+	<connection>
+		<from>/CheckClassification/flagOutput:o </from>
+		<to>/checkClassification/flag:i </to>
+		<protocol>tcp</protocol>
+</connection>
+	
+   
+</application>
