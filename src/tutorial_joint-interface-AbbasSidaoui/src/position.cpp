@@ -542,24 +542,24 @@ public:
         else if (cmd.get(0).asString()=="Shy")
         {
             home();
-            
+            Time::delay(10);
             Shy();
             reply.addString("Shy_done");
         }
         else if (cmd.get(0).asString()=="HighFive")
         {
-            //home();
-            //yarp::delay(10);
             HighFive();
             reply.addString("HighFive_done");
         }
         else if (cmd.get(0).asString()=="home")
         {
-            //home();
+            home();
             reply.addString("home_done");
         }
         else if (cmd.get(0).asString()=="Happy")
         {
+            home();
+            Time::delay(10);
             Happy();
             reply.addString("Happy_done");
         }
