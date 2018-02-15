@@ -17,7 +17,7 @@ This module compare a recovered label on [ */userPreference/text_from_speech:i* 
 
 If the label match the database, the label is send to the classifier trough [ */userPreference/user_label:rpc_out* ]
 
-*Ports*
+**Ports**
 
 <ul>
   <li><b>/userPreference/text_from_speech:i</b>  Output recognised word by the STT (speak to text) engine provided by yarpjs</li>
@@ -25,14 +25,16 @@ If the label match the database, the label is send to the classifier trough [ */
   <li><b>/userPreference/control/rpc:i</b>  Input port for TTS Synthesis</li>
 </ul> 
 
-*rpc command feedback*
+**rpc command feedback**
 
-<ul>from */userPreference/control/rpc:i*
+from */userPreference/control/rpc:i*
+<ul>
   <li><b>"send"</b>  Set the module in 'sendind' configuration</li>
   <li><b>"stop"</b>  Set the module in 'idle' configuration</li>
 </ul> 
 
-<ul>from */objectRecognizer/userLabel/rpc:i*
+from */objectRecognizer/userLabel/rpc:i*
+<ul>
   <li><b>"label_ok"</b>  </li>
   <li><b>"label_invalid"</b>  </li>
 </ul> 
