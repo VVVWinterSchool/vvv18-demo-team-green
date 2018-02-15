@@ -1,0 +1,16 @@
+yarp connect /wholeBodyDynamics/right_arm/cartesianEndEffectorWrench:o /CheckClassification/rigthArmForces:i
+Success: Added connection from /wholeBodyDynamics/right_arm/cartesianEndEffectorWrench:o to tcp://CheckClassification/rigthArmForces:i
+icub@iiticublap061:~$ yarp connect /MachineModule/rpc:o /MachineModule/rpc:iSuccess: Added connection from /MachineModule/rpc:o to tcp://MachineModule/rpc:i
+icub@iiticublap061:~$ yarp connect /objectPointing/position:o /objectPointing/position:i
+Success: Added connection from /objectPointing/position:o to tcp://objectPointing/position:i
+icub@iiticublap061:~$ yarp connect /objectPointing/done:o /high_five_ready:iSuccess: Added connection from /objectPointing/done:o to tcp://high_five_ready:i
+icub@iiticublap061:~$ yarp connect /checkClassification/flag:o /CheckClassification/flagInput:i
+Success: Added connection from /checkClassification/flag:o to tcp://CheckClassification/flagInput:i
+icub@iiticublap061:~$ yarp connect /CheckClassification/flagOutput:o /checkClassification/flag:i
+Success: Added connection from /CheckClassification/flagOutput:o to tcp://checkClassification/flag:i
+icub@iiticublap061:~$ yarp connect /wholeBodyDynamics/right_arm/cartesianEndEffectorWrench:o /CheckClassification/rigthArmForces:i
+Success: Added connection from /wholeBodyDynamics/right_arm/cartesianEndEffectorWrench:o to tcp://CheckClassification/rigthArmForces:i
+icub@iiticublap061:~$ yarp connect /position:o /position:i
+Failure: could not find destination port /position:i
+icub@iiticublap061:~$ yarp connect /position:o /position:i
+Success: Added connection from /position:o to tcp://position:i

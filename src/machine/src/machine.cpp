@@ -106,7 +106,7 @@ bool MachineModule::updateModule(void)
         objectBottleOut.write();
         reachedPosIn.read(true);
         yInfo()<<"point action done...";
-        Time::delay(5.0);
+        Time::delay(10.0);
         cmdBottle.clear();
         cmdBottle.addString("HighFive");
         replyBottle.clear();
@@ -135,6 +135,7 @@ bool MachineModule::updateModule(void)
         }
         feedback=feedbackBottle->get(0).asInt();
         yInfo()<<"got "<<feedback;
+        Time::delay(5.0);
         cmdBottle.clear();
         if(feedback==0)
             cmdBottle.addString("Shy");
