@@ -8,7 +8,7 @@ bool MachineModule::openPorts(const string &moduleName)
     status&=noObjectIn.open("/segment_crop/valid_detection:o");
     status&=objectBottleIn.open("/objectRecognizer/position:i");
     status&=objectBottleOut.open("/objectPointing/position:o");
-    status&=reachedPosIn.open("/high_five_ready:o");
+    status&=reachedPosIn.open("/high_five_ready:i");
     status&=rewardDetectorOut.open("/checkClassification/flag:o");
     status&=feedbackIn.open("/checkClassification/flag:i");
     status&=homeOut.open("/homeOut/flag:o");
@@ -62,6 +62,7 @@ bool MachineModule::updateModule(void)
     }
     case CMD:
     {
+        // read unblocking
         break;
     }
     case POINT_ACTION:
@@ -73,6 +74,7 @@ bool MachineModule::updateModule(void)
         speechRecogn.write(cmdBottle, replyBottle);
         yInfo()<<"sending vocal command and waiting for 3D position...";
         // fill: no object detected
+        //Vector *posBottleIn=objectBottleIn.read(true);
         Bottle *posBottleIn=objectBottleIn.read(true);
         if(posBottleIn==NULL)
         {
@@ -80,9 +82,20 @@ bool MachineModule::updateModule(void)
             state=IDLE;
             return false;
         }
+        //yInfo()<<"got "<<posBottleIn->operator[](0)<<" "<<posBottleIn->operator[](1)<<" "<<posBottleIn->operator[](2);
+        if(posBottleIn->size()!=3)
+        {
+            yWarning()<<"posBottleIn not size 3...";
+            state=IDLE;
+            break;
+        }
         yInfo()<<"got "<<posBottleIn->get(0).asDouble()<<" "<<posBottleIn->get(1).asDouble()<<" "<<posBottleIn->get(2).asDouble();
         yInfo()<<"sending...";
         Bottle &posBottleOut=objectBottleOut.prepare();
+        //posBottleOut.clear();
+        //posBottleOut.addDouble(posBottleIn->operator[](0));
+        //posBottleOut.addDouble(posBottleIn->operator[](1));
+        //posBottleOut.addDouble(posBottleIn->operator[](2));
         posBottleOut=*posBottleIn;
         objectBottleOut.write();
         reachedPosIn.read(true);
@@ -127,6 +140,7 @@ bool MachineModule::updateModule(void)
             state=IDLE;
             return false;
         }
+        yInfo()<<"in home...";
         feedback=2;
         state=IDLE;
         break;

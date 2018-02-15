@@ -1,0 +1,33 @@
+<application>
+    <name>Fixture for Assignment on Computed Torque</name>
+    <description>A fixture to prepare components required for the assignment</description>
+    <version>1.0</version>
+    <authors>
+        <author email="francesco.romano@iit.it">Francesco Romano</author>
+    </authors>
+    <module>
+        <name>gzserver</name>
+        <parameters>-slibgazebo_yarp_clock.so icub_simple_fixed_world/icub_simple_fixed.world</parameters>
+        <node>testnode</node>
+    </module>
+    <!-- Uncomment to visualize the simulation -->
+    <!--
+    <module>
+        <name>gzclient</name>
+        <node>testnode</node>
+    </module>
+    -->
+    <module>
+        <name>assignment_computed-torque</name>
+        <environment>YARP_CLOCK=/clock;YARP_ROBOT_NAME=iCubGazeboV2_5</environment>
+        <dependencies>
+            <port timeout="10">/icubSim/right_leg/stateExt:o</port>
+            <port timeout="10">/icubSim/right_leg/rpc:i</port>
+            <port timeout="10">/icubSim/left_leg/stateExt:o</port>
+            <port timeout="10">/icubSim/right_arm/stateExt:o</port>
+            <port timeout="10">/icubSim/left_arm/stateExt:o</port>
+            <port timeout="10">/icubSim/torso/stateExt:o</port>
+        </dependencies>
+        <node>testnode</node>
+    </module>
+ </application>

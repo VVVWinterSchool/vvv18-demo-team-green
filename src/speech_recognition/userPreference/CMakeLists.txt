@@ -22,7 +22,7 @@ list(APPEND CMAKE_MODULE_PATH ${YARP_MODULE_PATH})
 
 # building 
 include_directories(${YARP_INCLUDE_DIRS})
-add_executable(userPreference ${CMAKE_SOURCE_DIR}/main.cpp)
+add_executable(userPreference ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
 target_link_libraries(userPreference ${YARP_LIBRARIES})
 install(TARGETS userPreference DESTINATION bin)
 

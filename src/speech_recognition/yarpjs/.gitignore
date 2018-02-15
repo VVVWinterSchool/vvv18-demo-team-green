@@ -1,6 +1,2 @@
-node_modules/*
-build/*
-npm-debug.log
-tests/*
+node_modules/
 
-package-lock.json

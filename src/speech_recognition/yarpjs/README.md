@@ -1,5 +1,3 @@
-
-
 # yarp.js
 
 [![DOI](https://zenodo.org/badge/53891456.svg)](https://zenodo.org/badge/latestdoi/53891456)

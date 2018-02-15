@@ -16,7 +16,7 @@ find_package(OpenCV)
 include_directories(${YARP_INCLUDE_DIRS})
 include_directories(${OpenCV_INCLUDE_DIRS})
 
-include_directories("YarpJS/include")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/YarpJS/include")
 
 
 # This line will tell CMake that we're building a shared library

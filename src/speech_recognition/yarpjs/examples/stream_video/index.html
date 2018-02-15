@@ -1,0 +1,295 @@
+<!doctype html>
+<html>
+  <head>
+    <title>YarpJS Stream Audio</title>
+    
+
+    <meta name=viewport content="width=device-width, initial-scale=1">
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.1/css/font-awesome.min.css">
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/jquery/dist/jquery.min.js"></script>  
+    <script src="/yarp.js"></script>
+
+
+
+    <style>
+      .cont {
+        text-align: center;
+      }
+
+      .cont * {
+        display: inline-block;
+      }
+
+      .main {
+        margin-top: 4em;
+      }
+
+      #stream-video {
+        border-radius: 10%;
+        border: 0.5em solid #D4D6D8;
+
+        box-shadow: 4px 4px 10px -3px rgba(0, 0, 0, 0.5);
+
+        display: block;
+        height: 240px;
+        width: 320px;
+      }
+
+
+      .invisible {
+          display: none;
+      }
+
+      #description {
+          padding: 3em;
+          padding-top:0;
+      }
+
+      #description * {
+          text-align: center;
+      }
+
+      #description p {
+          font-size: 1.3em;
+          margin-top: 3em;
+      }
+
+      #description b {
+          font-weight: bold;
+          color: cornflowerblue;
+      }
+
+      #description h1 b {
+          font-family: 'Lobster', serif;
+      }
+
+      /* Custom */
+
+      #description p {
+        margin-top: 1em;
+      }
+
+
+      #description b.danger {
+          color: crimson;
+      } 
+
+      #description ul {
+        font-size: 1.3em;
+        text-align: left;
+      }
+
+      #description p.danger {
+          margin: 2em;
+          color: crimson;
+      } 
+
+
+
+      #description h1 {
+        display: block;
+      }
+
+      form {
+        margin-top: 3em;
+        margin-bottom: 0;
+        font-size: 1.3em;
+      }
+
+
+    </style>
+  </head>
+
+
+<!-- ############  BODY ################# -->
+
+  <body>
+
+    <div class='main cont'>
+
+        <div id='write-time'></div>
+        <div class='cont'>
+          <!-- <img id='stream-video'/> -->
+          <canvas id='stream-video'></canvas>
+        
+          <form action = "" id='form-connect-stream-video' class="form-inline" style="margin-bottom: 1em">      
+
+            <input type="text" class="form-stream-video" id="input-connect-stream-video" placeholder="/robot/cam:o" value='/robot/cam:o'>
+
+            <button id='btn-connect-stream-video' type="button" class="btn btn-primary" data-toggle="button" aria-pressed="false" autocomplete="off">
+              Connect
+            </button>
+
+          </form>
+        </div>
+
+        <div id='description'>
+          <p id='warning-connection' class='danger invisible'>
+            There is already a connection to this port. Please disconnect and reload.
+          </p>
+        
+          <h1>Stream Video</h1>
+
+          <p>
+            This examples shows how to read and visualize images from the YARP network. This demo opens a port <b>/yarpjs/img:i</b>. Images sent to this port are visualized on this page.
+          </p>
+
+       
+          <p>
+            <b class='danger'>Limited Support:</b> for security reasons, Chrome does not allow to access the audio/video stream from unsecure hosts (https Vs http). To bypass this issue you can use a <b>self-signed SSL</b> secure domain (see <a href='https://github.com/robotology/yarp.js/tree/master/examples#secure-domains'>here</a>!)
+              </li>
+            </ul>
+          </p>
+        </div>
+
+
+    </div>
+
+  </body>
+
+<!-- ############  END BODY ################# -->
+
+
+  <script>
+    var socket = io();
+    yarp.init(socket);
+  </script>
+
+
+  <script>
+
+    
+    var video_stream_element = document.getElementById('stream-video');
+    var btn_connect_video_stream = document.getElementById('btn-connect-stream-video');
+    var input_connect_video_stream = document.getElementById('input-connect-stream-video');
+    var form_connect_video_stream = document.getElementById('form-connect-stream-video');
+
+    var port_click_out = undefined;
+
+    var connected = false;
+    var initialized = false;
+
+
+    var g_img = undefined;
+
+    var virtual_img = new Image();
+
+    var curr_time = Date.now();
+    var write_time = document.getElementById('write-time');
+
+    function tmp_visual() {
+      if(g_img != undefined)
+      {
+        virtual_img.src = yarp.getImageSrc(g_img.compression_type,g_img.buffer);
+        video_stream_element.getContext('2d').drawImage(virtual_img,0,0);
+        // video_stream_element.setAttribute('src',yarp.getImageSrc(g_img.compression_type,g_img.buffer));
+      }
+
+
+      // console.log(d.getTime()-curr_time);
+      // write_time.innerHTML = Date.now()-curr_time;
+      curr_time = Date.now();
+
+      setTimeout(tmp_visual,33);
+    }
+
+    tmp_visual();
+
+    // what to do as soon as the yarp module is ready
+    yarp.onInit(function() {
+      
+      var port_video_in_name = '/yarpjs/img:i';
+      var port_click_out_name = '/yarpjs/img/click:o';
+
+      port_click_out = yarp.PortHandler.openPort(port_click_out_name,'bottle');
+
+      var port_video_in = yarp.PortHandler.openPort(port_video_in_name,'image');
+
+
+      var t1 = Date.now();
+      port_video_in.onRead(function(img){
+
+        // if is not connected but it is reading something, then there is a problem. 
+        if(!connected && !initialized)
+        {
+          form_connect_video_stream.classList.add('invisible');
+          document.getElementById('warning-connection').classList.remove('invisible');
+        }
+
+        g_img = img;
+        // video_stream_element.setAttribute('src',yarp.getImageSrc(img.compression_type,img.buffer));
+        write_time.innerHTML = Date.now()-t1;
+        t1 = Date.now();
+      });
+
+
+      function toggleConnection() {
+
+        var port_src = input_connect_video_stream.value;
+          
+        if(!connected)
+        {
+          input_connect_video_stream.setAttribute('disabled','true');
+          btn_connect_video_stream.classList.remove('btn-primary');
+          btn_connect_video_stream.innerHTML='Disconnect';
+
+          yarp.Network.connect(port_src,port_video_in_name);
+
+          connected = true;
+
+          initialized = true;
+        }
+        else
+        {
+
+          yarp.Network.disconnect(port_src,port_video_in_name);
+
+          input_connect_video_stream.removeAttribute('disabled');
+          btn_connect_video_stream.classList.add('btn-primary');
+          btn_connect_video_stream.innerHTML='Connect';
+
+          connected = false;
+        }
+
+      }
+
+      btn_connect_video_stream.onclick = toggleConnection;
+      form_connect_video_stream.addEventListener("submit", function(event){
+          event.preventDefault();
+          toggleConnection();
+      });
+        
+
+    });
+
+
+
+    video_stream_element.addEventListener('click', function() {
+
+      var rect = video_stream_element.getBoundingClientRect();
+      var x = event.clientX - rect.left;
+      var y = event.clientY - rect.top;
+
+      port_click_out.write([x,y]);
+
+    }, false);
+
+
+  </script>
+
+
+</html>
+
+
+
+
+
+
+
+

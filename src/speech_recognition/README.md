@@ -29,6 +29,14 @@ If the label match the database, the label is send to the classifier trough [ */
   <li><b>/userPreference/control/rpc:i</b>  Input port for TTS Synthesis</li>
 </ul> 
 
+## Set speech_recognition.xml file
+
+In the file update this line:  *(my_folder_path)*/vvv18-demo-team-green/src/speech_recognition/build/yarpjs
+  
+  
+
+
+
 # Run the modules
 
 In order to run the modules and interconnect them here is the procedure :
