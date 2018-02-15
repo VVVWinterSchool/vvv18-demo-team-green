@@ -204,7 +204,7 @@ protected:
 
     ipos_torso->positionMove(torso_yaw,-29.0);
     ipos_torso->positionMove(torso_roll,-1.20);
-     ipos_torso->positionMove(torso_pitch,20.0);
+     ipos_torso->positionMove(torso_pitch,15.0);
 
 
     bool head_done1=false;
@@ -541,17 +541,21 @@ public:
         }
         else if (cmd.get(0).asString()=="Shy")
         {
+            home();
+            
             Shy();
             reply.addString("Shy_done");
         }
         else if (cmd.get(0).asString()=="HighFive")
         {
+            //home();
+            //yarp::delay(10);
             HighFive();
             reply.addString("HighFive_done");
         }
         else if (cmd.get(0).asString()=="home")
         {
-            home();
+            //home();
             reply.addString("home_done");
         }
         else if (cmd.get(0).asString()=="Happy")
@@ -669,48 +673,48 @@ public:
         ipos_torso->setRefSpeed(torso_yaw,20.0);
 
         //ref acceleration
-        ipos_left->setRefAcceleration(shoulder_pitch,100.0);
-        ipos_left->setRefAcceleration(shoulder_roll,100.0);
-        ipos_left->setRefAcceleration(shoulder_yaw,100.0);
-        ipos_left->setRefAcceleration(elbow,100.0);
-        ipos_left->setRefAcceleration(wrist_grosup,100.0);
-        ipos_left->setRefAcceleration(wrist_pitch,100.0);
-        ipos_left->setRefAcceleration(wrist_yaw,100.0);
-        ipos_left->setRefAcceleration(hand_finger,100.0);
-        ipos_left->setRefAcceleration(thumb_oppose,100.0);
-        ipos_left->setRefAcceleration(thumb_p,100.0);
-        ipos_left->setRefAcceleration(thumb_d,100.0);
-        ipos_left->setRefAcceleration(index_p,100.0);
-        ipos_left->setRefAcceleration(index_d,100.0);
-        ipos_left->setRefAcceleration(middle_p,100.0);
-        ipos_left->setRefAcceleration(middle_d,100.0);
-        ipos_left->setRefAcceleration(pinky,100.0);
+        ipos_left->setRefAcceleration(shoulder_pitch,70.0);
+        ipos_left->setRefAcceleration(shoulder_roll,70.0);
+        ipos_left->setRefAcceleration(shoulder_yaw,70.0);
+        ipos_left->setRefAcceleration(elbow,70.0);
+        ipos_left->setRefAcceleration(wrist_grosup,70.0);
+        ipos_left->setRefAcceleration(wrist_pitch,70.0);
+        ipos_left->setRefAcceleration(wrist_yaw,70.0);
+        ipos_left->setRefAcceleration(hand_finger,70.0);
+        ipos_left->setRefAcceleration(thumb_oppose,70.0);
+        ipos_left->setRefAcceleration(thumb_p,70.0);
+        ipos_left->setRefAcceleration(thumb_d,70.0);
+        ipos_left->setRefAcceleration(index_p,70.0);
+        ipos_left->setRefAcceleration(index_d,70.0);
+        ipos_left->setRefAcceleration(middle_p,70.0);
+        ipos_left->setRefAcceleration(middle_d,70.0);
+        ipos_left->setRefAcceleration(pinky,70.0);
 
-        ipos_right->setRefAcceleration(shoulder_pitch,100.0);
-        ipos_right->setRefAcceleration(shoulder_roll,100.0);
-        ipos_right->setRefAcceleration(shoulder_yaw,100.0);
-        ipos_right->setRefAcceleration(elbow,100.0);
-        ipos_right->setRefAcceleration(wrist_grosup,100.0);
-        ipos_right->setRefAcceleration(wrist_pitch,100.0);
-        ipos_right->setRefAcceleration(wrist_yaw,100.0);
-        ipos_right->setRefAcceleration(hand_finger,100.0);
-        ipos_right->setRefAcceleration(thumb_oppose,100.0);
-        ipos_right->setRefAcceleration(thumb_p,100.0);
-        ipos_right->setRefAcceleration(thumb_d,100.0);
-        ipos_right->setRefAcceleration(index_p,100.0);
-        ipos_right->setRefAcceleration(index_d,100.0);
-        ipos_right->setRefAcceleration(middle_p,100.0);
-        ipos_right->setRefAcceleration(middle_d,100.0);
-        ipos_right->setRefAcceleration(pinky,100.0);
+        ipos_right->setRefAcceleration(shoulder_pitch,70.0);
+        ipos_right->setRefAcceleration(shoulder_roll,70.0);
+        ipos_right->setRefAcceleration(shoulder_yaw,70.0);
+        ipos_right->setRefAcceleration(elbow,70.0);
+        ipos_right->setRefAcceleration(wrist_grosup,70.0);
+        ipos_right->setRefAcceleration(wrist_pitch,70.0);
+        ipos_right->setRefAcceleration(wrist_yaw,70.0);
+        ipos_right->setRefAcceleration(hand_finger,70.0);
+        ipos_right->setRefAcceleration(thumb_oppose,70.0);
+        ipos_right->setRefAcceleration(thumb_p,70.0);
+        ipos_right->setRefAcceleration(thumb_d,70.0);
+        ipos_right->setRefAcceleration(index_p,70.0);
+        ipos_right->setRefAcceleration(index_d,70.0);
+        ipos_right->setRefAcceleration(middle_p,70.0);
+        ipos_right->setRefAcceleration(middle_d,70.0);
+        ipos_right->setRefAcceleration(pinky,70.0);
 
 
-        ipos_head->setRefAcceleration(neck_pitch,100.0);
-        ipos_head->setRefAcceleration(neck_roll,100.0);
-        ipos_head->setRefAcceleration(neck_yaw,100.0);
+        ipos_head->setRefAcceleration(neck_pitch,70.0);
+        ipos_head->setRefAcceleration(neck_roll,70.0);
+        ipos_head->setRefAcceleration(neck_yaw,70.0);
 
-        ipos_torso->setRefAcceleration(torso_pitch,100.0);
-        ipos_torso->setRefAcceleration(torso_roll,100.0);
-        ipos_torso->setRefAcceleration(torso_yaw,100.0);
+        ipos_torso->setRefAcceleration(torso_pitch,70.0);
+        ipos_torso->setRefAcceleration(torso_roll,70.0);
+        ipos_torso->setRefAcceleration(torso_yaw,70.0);
 
     }
 
