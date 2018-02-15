@@ -18,7 +18,7 @@ class userPreference:public RFModule
     BufferedPort<Bottle> text_from_speech; // Label from yarpjs Speak to text module //@Todo : is a bufferedPort better?
     std::string name_text_from_speech = "/userPreference/text_from_speech:i";
 
-    std::vector<std::string> list_label = {"Ball", "Car", "Mug", "Cube"};
+    std::vector<std::string> list_label{"ball", "car", "mug", "cube"};
 
     bool readytoSend = false; //Define if userPreference is able to send data
 
@@ -91,9 +91,34 @@ public:
     }
 
     /* Check if word in inside the list and send */
+    bool checkIfExist(std::string str)
+    {
+
+//        if (std::find(std::begin(list_label), std::end(list_label), *str) != std::end(list_label))
+//        {
+//            return true;
+//        }
+//        else
+//        {
+//            return false;
+//        }
+
+        for (int i =0; i<list_label.size(); i++)
+        {
+            yInfo()<<"--exist : "<< list_label[i] <<" -- "<<str;
+            if(list_label[i].compare(str)==0)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 
     bool isPreference(std::string str)
     {
+        if(!checkIfExist(str))
+            return false;
+
         //@todo : do the check
 
         Bottle cmd;
