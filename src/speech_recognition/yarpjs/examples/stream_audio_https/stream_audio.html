@@ -1,0 +1,147 @@
+
+<!doctype html>
+<html>
+  <head>
+    <title>yarp.js Stream Audio</title>
+    
+
+    <meta name=viewport content="width=device-width, initial-scale=1">
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.1/css/font-awesome.min.css">
+
+
+
+    <script src="/socket.io/socket.io.js"></script>
+
+    <style>
+
+
+    </style>
+  </head>
+
+
+<!-- ############  BODY ################# -->
+
+  <body>
+
+    <div class='main-container'>
+      <button id='btn-voice' type="button" class="btn" onClick="toggleVoiceBTN(this)" data-toggle="button" aria-pressed="false" autocomplete="off">
+              <i class="fa fa-microphone-slash fa-fw" style='margin-right:0.3em' aria-hidden="true"></i>Voice Recognition
+      </button>
+    </div>
+
+  </body>
+
+<!-- ############  END BODY ################# -->
+  
+  <script src="jquery.js"></script>
+
+  <script src="yarp.js"></script>
+
+  <script src="socket.io-stream.js"></script>
+
+
+
+
+
+
+  <script>
+
+    var socket = io();
+
+    recording = false;
+
+    var errorCallback = function(e) {
+      console.log('Audio Recording Rejected!', e);
+    };
+
+
+    if (!navigator.getUserMedia)
+      navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+
+    if (navigator.getUserMedia) {
+      navigator.getUserMedia({audio:true}, success, function(e) {
+        alert('Error capturing audio.');
+      });
+    } else alert('getUserMedia not supported in this browser.');
+
+
+
+
+
+    function success(e) {
+      audioContext = window.AudioContext || window.webkitAudioContext;
+      context = new audioContext();
+
+      // the sample rate is in context.sampleRate
+      audioInput = context.createMediaStreamSource(e);
+
+      var bufferSize = 2048;
+      recorder = context.createScriptProcessor(bufferSize, 1, 1);
+
+      recorder.onaudioprocess = function onaudioprocess(e2) {
+ 
+        if(!recording)
+        {
+          socket.emit('stream-end');
+          return;
+        }
+
+        var left = e2.inputBuffer.getChannelData(0);
+        var hh = convertFloat32ToInt16(left);
+
+        socket.emit('stream-audio',{buffer:hh});
+
+      }
+
+      audioInput.connect(recorder);
+      recorder.connect(context.destination); 
+
+    }
+
+
+    function convertFloat32ToInt16(buffer) {
+      l = buffer.length;
+      buf = new Int16Array(l);
+      while (l--) {
+        buf[l] = Math.min(1, buffer[l])*0x7FFF;
+      }
+      return buf.buffer;
+    }
+
+
+
+    function toggleVoiceBTN(el)
+    {
+      if($(el).hasClass('btn-primary'))
+      {
+        recording=false;
+        $(el).removeClass('btn-primary');
+        $(el).find('i').removeClass('fa-microphone');
+        $(el).find('i').addClass('fa-microphone-slash');
+      }
+      else
+      {
+        recording=true;
+        $(el).addClass('btn-primary');
+        $(el).find('i').removeClass('fa-microphone-slash');
+        $(el).find('i').addClass('fa-microphone');
+      }
+    }
+
+
+  </script>
+
+
+</html>
+
+
+
+
+
+
+
+
