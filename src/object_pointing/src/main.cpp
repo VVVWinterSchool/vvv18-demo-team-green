@@ -57,6 +57,17 @@ class CtrlModule: public RFModule
 
 public:
 
+//    // Fixate eyes
+//    void fixate(const Vector &x)
+//    {
+//        // FILL IN THE CODE +++
+//        yInfo()<<"Fixating on the 3d point: "<<x[0]<<","<<x[1]<<","<<x[2];
+//        igaze->lookAtFixationPointSync(x);
+//        yInfo()<<"Waitinf for the end of visual fixation...";
+//        igaze->waitMotionDone();
+//        yInfo()<<"Fixation done.";
+//    }
+
     void extendIndexFingerLength(double lengthToAdd)
     {
         yInfo()<<"Index finger length extention (attachTipFrame)... ";
