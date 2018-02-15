@@ -2,6 +2,9 @@
 
 This module is based on the module *[yarp.js](https://github.com/robotology/yarp.js)*
 
+In order to run properly: <span style="color:red">node.js need to be installed</span> ( [installation instruction](https://github.com/vvv-school/vvv18-demo-team-green/tree/master/src/speech_recognition/yarpjs)).
+
+
 This mode run locally a node.js server and display a webpage [http://localhost:3000](http://localhost:3000)
 
 *Ports*
@@ -12,16 +15,30 @@ This mode run locally a node.js server and display a webpage [http://localhost:3
 </ul> 
 
 
-# userPrefence module
+# userPreference module
 
-This module compare a recovered label on [ */userPrefence/text_from_speech:i* ], to an authorised database (**user_list.json**).
+This module compare a recovered label on [ */userPreference/text_from_speech:i* ], to an authorised database (**user_list.json**).
 
-If the label match the database, the label is send to the classifier trough [ */userPrefence/user_label:rpc_out* ]
+If the label match the database, the label is send to the classifier trough [ */userPreference/user_label:rpc_out* ]
 
 *Ports*
 
 <ul>
-  <li><b>/userPrefence/text_from_speech:i</b>  Output recognised word by the STT (speak to text) engine provided by yarpjs</li>
-  <li><b>/userPrefence/user_label/rpc</b>  Port where the correct user *label*(string) is send to the classifier</li>
-  <li><b>/userPrefence/control/rpc:i</b>  Input port for TTS Synthesis</li>
+  <li><b>/userPreference/text_from_speech:i</b>  Output recognised word by the STT (speak to text) engine provided by yarpjs</li>
+  <li><b>/userPreference/user_label/rpc</b>  Port where the correct user *label*(string) is send to the classifier</li>
+  <li><b>/userPreference/control/rpc:i</b>  Input port for TTS Synthesis</li>
 </ul> 
+
+# Run the modules
+
+In order to run the modules and interconnect them here is the procedure :
+
+<ol>
+    <li>Run the nodeJs server of YarpsJs: In yarpjs open one terminal and type: <b>node server/run_server.js</b>
+        </li>
+    <li>Launch userPreferenceModule. In associated folder : <b>./userPreferenceModule</b> </li>
+    <li>Open chrome/chromium at : <b>http://localhost:3000</b></li>
+    <li>Connect <b>/yarpjs/speech/rec:o</b> => <b>/userPreference/text_from_speech:i</b> </li>
+    <li>Connect <b>/userPreference/user_label/rpc:o</b> => <b>/objectRecognizer/userLabel/rpc:i</b> (from classifer module) </li>
+    <li>Enjoy !! </li>
+</ol>

@@ -10,24 +10,24 @@ using namespace yarp::os;
 class userPreference:public RFModule
 {
     RpcServer control_rpc_in; //A port to handle messages from the controller
-    std::string name_control_rpc_in = "/userPrefence/control/rpc:i";
+    std::string name_control_rpc_in = "/userPreference/control/rpc:i";
 
     RpcClient label_rpc_out; // Port sending data to the clasifier
-    std::string name_label_rpc_out = "/userPrefence/user_label/rpc";
+    std::string name_label_rpc_out = "/userPreference/user_label/rpc:o";
 
     BufferedPort<Bottle> text_from_speech; // Label from yarpjs Speak to text module //@Todo : is a bufferedPort better?
-    std::string name_text_from_speech = "/userPrefence/text_from_speech:i";
-    
-    std::vector<std::string> list_label = {"Ball", "Car", "Mug", "Cube"};
+    std::string name_text_from_speech = "/userPreference/text_from_speech:i";
+
+    std::vector<std::string> list_label{"ball", "car", "mug", "cube"};
 
     bool readytoSend = false; //Define if userPreference is able to send data
 
-    int period=1.0; //default value
+    double period=1.0; //default value
     std::string classifier_rpc_name = "/objectRecognizer/userLabel/rpc:i"; //default value
 
-    int max_timeout_rpc_reply = 1.0; // maximal waiting time for a timeout reply
+    float max_timeout_rpc_reply = 5.0f; // maximal waiting time for a timeout reply
     int nbTRial = 3; // nb of trial before trigering
-
+    
 public:
 
     double getPeriod()
@@ -42,13 +42,13 @@ public:
     {
 
         Bottle *input = text_from_speech.read();
-        std::string str = input->toString().c_str();
         if (input != NULL)
         {
+            std::string str = input->get(0).asString();
             if(str.compare("")!=0 )
             {
                 yInfo()<<"input from STT :"<<str;
-                //isPrefence(str);
+                isPreference(str);
             }
             else
             {
@@ -58,6 +58,7 @@ public:
         else
         {
            yInfo()<<"input from STT : is NULL";
+           return false;
         }
         return true;
     }
@@ -90,16 +91,82 @@ public:
     }
 
     /* Check if word in inside the list and send */
-
-    bool isPrefence(std::string str)
+    bool checkIfExist(std::string str)
     {
+
+//        if (std::find(std::begin(list_label), std::end(list_label), *str) != std::end(list_label))
+//        {
+//            return true;
+//        }
+//        else
+//        {
+//            return false;
+//        }
+
+        for (int i =0; i<list_label.size(); i++)
+        {
+            yInfo()<<"--exist : "<< list_label[i] <<" -- "<<str;
+            if(list_label[i].compare(str)==0)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool isPreference(std::string str)
+    {
+        if(!checkIfExist(str))
+            return false;
+
         //@todo : do the check
 
         Bottle cmd;
         Bottle response;
         cmd.addString(str);
+        string rps;
+        int i=1;
+        for(i;i<=nbTRial;i++)
+        {
 
-        label_rpc_out.write(cmd,response);
+            if(label_rpc_out.write(cmd,response) == true)
+            {
+                rps = response.toString().c_str();
+                yInfo()<<"rpc answer :"<<rps;
+                break; //get out of the condition
+            }
+            else
+            {
+                yInfo()<<"Fail to call : trial "<<i;
+                if(i==nbTRial)
+                {
+                    yInfo()<<"The classifier did not answered";
+                    // @todo trigger event to controller
+                    return false;
+                }
+                Time::delay(1);
+            }
+         }
+
+        // Redirection case based on the classifier feedback
+
+        if(rps.compare("label_ok")==0)
+        {
+            yInfo()<<"The label ("<< str <<") was received by the classifier :";
+            readytoSend = false;
+        }
+        else if (rps.compare("label_invalid")==0)
+        {
+            yInfo()<<"Unkown label ("<< str <<") for the classifier";
+            //@todo : Trigger beahaviour : Reask for question
+         }
+        else
+        {
+            yInfo()<<"Unkown response -- clasifier returned :"<< rps;
+        }
+
+        return true;
+
 
         //label_rpc_out.(cmd,response);
         //readytoSend = false;
@@ -138,13 +205,17 @@ public:
 
         if (rf.check("rpc_classifier_server"))
             classifier_rpc_name=rf.find("rpc_classifier_server").asString();
+        
+        if (rf.check("period"))
+            period=rf.find("period").asDouble();
 
-        // @Todo : Strore here the alowed label from the file
-        if(!readJsonFile())
-        {
-            yError()<<"Unable to open JSONfile : "<< name_control_rpc_in;
-            return false;
-        }
+
+//        // @Todo : Strore here the alowed label from the file
+//        if(!readJsonFile())
+//        {
+//            yError()<<"Unable to open JSONfile : "<< name_control_rpc_in;
+//            return false;
+//        }
 
         return true;
     }
@@ -157,7 +228,9 @@ public:
         yInfo()<<"Interrupting your module, for port cleanup";
 
         control_rpc_in.interrupt();
+        yInfo()<<"1";
         label_rpc_out.interrupt();
+        yInfo()<<"2";
         text_from_speech.interrupt();
         return true;
     }
@@ -179,11 +252,11 @@ public:
 
 private:
 
-    bool readJsonFile()
-    {
-        // @Todo
-        return true;
-    }
+//    bool readJsonFile()
+//    {
+//        // @Todo
+//        return true;
+//    }
 
 };
 
