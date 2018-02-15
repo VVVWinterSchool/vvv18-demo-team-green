@@ -12,16 +12,16 @@ This mode run locally a node.js server and display a webpage [http://localhost:3
 </ul> 
 
 
-# userPrefence module
+# userPreference module
 
-This module compare a recovered label on [ */userPrefence/text_from_speech:i* ], to an authorised database (**user_list.json**).
+This module compare a recovered label on [ */userPreference/text_from_speech:i* ], to an authorised database (**user_list.json**).
 
-If the label match the database, the label is send to the classifier trough [ */userPrefence/user_label:rpc_out* ]
+If the label match the database, the label is send to the classifier trough [ */userPreference/user_label:rpc_out* ]
 
 *Ports*
 
 <ul>
-  <li><b>/userPrefence/text_from_speech:i</b>  Output recognised word by the STT (speak to text) engine provided by yarpjs</li>
-  <li><b>/userPrefence/user_label/rpc</b>  Port where the correct user *label*(string) is send to the classifier</li>
-  <li><b>/userPrefence/control/rpc:i</b>  Input port for TTS Synthesis</li>
+  <li><b>/userPreference/text_from_speech:i</b>  Output recognised word by the STT (speak to text) engine provided by yarpjs</li>
+  <li><b>/userPreference/user_label/rpc</b>  Port where the correct user *label*(string) is send to the classifier</li>
+  <li><b>/userPreference/control/rpc:i</b>  Input port for TTS Synthesis</li>
 </ul> 

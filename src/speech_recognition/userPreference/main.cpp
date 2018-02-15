@@ -10,14 +10,14 @@ using namespace yarp::os;
 class userPreference:public RFModule
 {
     RpcServer control_rpc_in; //A port to handle messages from the controller
-    std::string name_control_rpc_in = "/userPrefence/control/rpc:i";
+    std::string name_control_rpc_in = "/userPreference/control/rpc:i";
 
     RpcClient label_rpc_out; // Port sending data to the clasifier
-    std::string name_label_rpc_out = "/userPrefence/user_label/rpc";
+    std::string name_label_rpc_out = "/userPreference/user_label/rpc:o";
 
     BufferedPort<Bottle> text_from_speech; // Label from yarpjs Speak to text module //@Todo : is a bufferedPort better?
-    std::string name_text_from_speech = "/userPrefence/text_from_speech:i";
-    
+    std::string name_text_from_speech = "/userPreference/text_from_speech:i";
+
     std::vector<std::string> list_label = {"Ball", "Car", "Mug", "Cube"};
 
     bool readytoSend = false; //Define if userPreference is able to send data
@@ -25,7 +25,7 @@ class userPreference:public RFModule
     int period=1.0; //default value
     std::string classifier_rpc_name = "/objectRecognizer/userLabel/rpc:i"; //default value
 
-    int max_timeout_rpc_reply = 1.0; // maximal waiting time for a timeout reply
+    float max_timeout_rpc_reply = 5.0f; // maximal waiting time for a timeout reply
     int nbTRial = 3; // nb of trial before trigering
 
 public:
