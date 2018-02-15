@@ -504,7 +504,7 @@ public:
         }
 
         // open rpc port
-        rpc.open("/position");
+        rpc.open("/position:i");
 
         // attach the callback respond()
         attach(rpc);
