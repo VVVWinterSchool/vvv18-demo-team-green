@@ -76,18 +76,22 @@ bool Module::updateModule ()
     
     externalForces = *input;
     yInfo() <<"external Forces: " << externalForces.toString();
-    double threshold = 1.0;
+    double threshold = 3.0;
 
     yarp::os::Bottle &outbot = outPutFlagPort.prepare();
     if (externalForces(0) > threshold)
     {
         outbot.addInt(1);
+        yDebug() << "happy!";
         outPutFlagPort.write();
+        go = false;
 
     }else if (externalForces(0) < -threshold)
     {
         outbot.addInt(0);
+        yDebug() << "sad!";
         outPutFlagPort.write();
+        go = false;
     }else{
         //Do nothing
     }
@@ -116,7 +120,7 @@ bool Module::configure (yarp::os::ResourceFinder &rf)
         return -1;
     }
 
-    if (!outPutFlagPort.open("/CheckClassification/rigthArmForces:i"))
+    if (!outPutFlagPort.open("/CheckClassification/flagOutput:o"))
     {
         yError() << "cannot open the input port";
         return -1;
