@@ -1,0 +1,422 @@
+<!doctype html>
+<html>
+  <head>
+    <title>YarpJS Face Tracking</title>
+
+
+    <meta name=viewport content="width=device-width, initial-scale=1">
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.1/css/font-awesome.min.css">
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/jquery/dist/jquery.min.js"></script>
+    <script src="/yarp.js"></script>
+
+    <script src="/tracking-min.js"></script>
+    <script src="/face-min.js"></script>
+
+
+    <style>
+      .cont {
+        text-align: center;
+      }
+
+      .cont * {
+        display: inline-block;
+      }
+
+      .main {
+        margin-top: 4em;
+      }
+
+      .viewport {
+        margin-left: 1em;
+        margin-right: 1em;
+      }
+
+      .stream-window {
+        border-radius: 10%;
+        border: 0.5em solid #D4D6D8;
+
+        box-shadow: 4px 4px 10px -3px rgba(0, 0, 0, 0.5);
+
+        height: 240px;
+        width: 320px;
+      }
+
+      #stream-video {
+
+        display: block;
+      }
+
+
+      .invisible {
+          display: none;
+      }
+
+      #description {
+          padding: 3em;
+          padding-top:0;
+      }
+
+      #description * {
+          text-align: center;
+      }
+
+      #description p {
+          font-size: 1.3em;
+          margin-top: 3em;
+      }
+
+      #description b {
+          font-weight: bold;
+          color: cornflowerblue;
+      }
+
+      #description h1 b {
+          font-family: 'Lobster', serif;
+      }
+
+      /* Custom */
+
+      #description p {
+        margin-top: 1em;
+      }
+
+
+      #description b.danger {
+          color: crimson;
+      }
+
+      #description ul {
+        font-size: 1.3em;
+        text-align: left;
+      }
+
+      #description p.danger {
+          margin: 2em;
+          color: crimson;
+      }
+
+
+
+      #description h1 {
+        display: block;
+      }
+
+      .forms-container {
+          margin-top: 3em;
+      }
+
+      .forms-container > form {
+        display: block;
+      }
+
+      /*.forms-container .fa {
+        margin-right: 1em;
+      }*/
+
+      form {
+        margin-top: 1em;
+        margin-bottom: 0;
+        font-size: 1.3em;
+      }
+
+      #video {
+
+
+      }
+
+      #canvas-face-tracker {
+        position: absolute;
+        z-index: 100;
+      }
+
+
+
+    </style>
+  </head>
+
+
+<!-- ############  BODY ################# -->
+
+  <body>
+
+    <div class='main cont'>
+
+
+        <div class='cont' id='stream-container'>
+
+          <div class="viewport">
+            <canvas id="canvas-face-tracker" width="320" height="240" ></canvas>
+            <video class='stream-window' id="video" width="320" height="240" preload autoplay loop muted></video>
+
+          </div>
+          <div class="viewport">
+            <canvas id="canvas-image-stream" class='stream-window' width="320" height="240" ></canvas>
+          </div>
+
+          <div class='forms-container'>
+
+            <form action = "" id='form-connect-gaze-ctrl' class="form-inline" style="margin-bottom: 1em">
+
+              <i class="fa fa-android fa-fw fa-lg" aria-hidden="true"></i>
+
+              <input type="text" class="form-stream-video" id="input-connect-gaze-ctrl" placeholder="/iKinGazeCtrl/xd:i" value='/iKinGazeCtrl/xd:i'>
+
+              <button id='btn-connect-gaze-ctrl' type="button" class="btn btn-primary" data-toggle="button" aria-pressed="false" autocomplete="off">
+                Connect
+              </button>
+
+
+            </form>
+
+            <form action = "" id='form-connect-stream-video' class="form-inline" style="margin-bottom: 1em">
+
+              <i class="fa fa-video-camera fa-fw fa-lg" aria-hidden="true"></i>
+
+              <input type="text" class="form-stream-video" id="input-connect-stream-video" placeholder="/icubSim/cam/left" value='/icubSim/cam/left'>
+
+              <button id='btn-connect-stream-video' type="button" class="btn btn-primary" data-toggle="button" aria-pressed="false" autocomplete="off">
+                Connect
+              </button>
+
+            </form>
+
+          </div>
+
+        </div>
+
+
+        <div id='description'>
+          <p id='warning-connection' class='danger invisible'>
+            There is already a connection to this port. Please disconnect and reload.
+          </p>
+
+          <h1>Face Tracking</h1>
+
+
+          <p id='p-description'>
+            This examples uses a face tracking routine from <a href='https://trackingjs.com/'>tracking.js</a> to  tele-operate the head of a robot (e.g. iCub or iCub simulator) via the <a href='http://wiki.icub.org/brain/group__iKinGazeCtrl.html'>iKinGazeCtrl</a>. The position of the user face is obtained from the device camera and sent as a 3D position to the iKinGaze controller. Images acquired from the robot camera can also be streamed by connecting to the corresponding port (default /icubSim/cam/left).
+          </p>
+
+          <p id='not-https' class='invisible'>
+            <b class='danger'>Limited Support:</b> for security reasons, Chrome does not allow to access the audio/video stream from unsecure hosts (https Vs http). To bypass this issue you can use a <b>self-signed SSL</b> secure domain (see <a href='https://github.com/robotology/yarp.js/tree/master/examples#secure-domains'>here</a>!)
+              </li>
+            </ul>
+          </p>
+
+
+
+          
+
+        </div>
+
+
+    </div>
+
+  </body>
+
+<!-- ############  END BODY ################# -->
+
+  
+
+
+  <script>
+    var socket = io();
+    yarp.init(socket);
+  </script>
+
+
+
+  <script>
+    // if it is not in https hide everything except the error message
+    if (location.protocol != 'https:')
+    {
+      document.getElementById('stream-container').classList.add('invisible');
+      document.getElementById('p-description').classList.add('invisible');
+      document.getElementById('not-https').classList.remove('invisible');
+    }
+    else
+    {
+
+
+
+
+      var canvasFaceTracker = document.getElementById('canvas-face-tracker');
+      var contextFaceTracker = canvasFaceTracker.getContext('2d');
+
+      var canvasImageStream = document.getElementById('canvas-image-stream');
+      var contextImageStream = canvasImageStream.getContext('2d');
+
+
+      var faceX = 0;
+      var faceY = 0;
+
+      var posX = 0;
+      var posY = 0;
+
+
+      var shouldSend = false;
+
+      var tracker = new tracking.ObjectTracker('face');
+      // tracker.setInitialScale(4);
+      // tracker.setStepSize(2);
+
+      tracking.track('#video', tracker, { camera: true });
+
+      tracker.on('track', function(event) {
+
+        var maxRectArea = 0;
+        var maxRect;
+
+        event.data.forEach(function(rect) {
+          if (rect.width * rect.height > maxRectArea){
+            maxRectArea = rect.width * rect.height;
+            maxRect = rect;
+          }
+          let canvas = canvasFaceTracker;
+          let context = contextFaceTracker;
+
+          context.clearRect(0, 0, canvas.width, canvas.height);
+          context.strokeStyle = 'magenta';
+          context.strokeRect(rect.x, rect.y, rect.width, rect.height);
+          context.font = '11px Helvetica';
+          context.fillStyle = "#fff";
+          context.fillText('x: ' + rect.x + 'px', rect.x + rect.width + 5, rect.y + 11);
+          context.fillText('y: ' + rect.y + 'px', rect.x + rect.width + 5, rect.y + 22);
+
+
+            posX = rect.x + rect.width/2;
+            posY = rect.y + rect.height/2;
+        });
+
+
+
+        if(maxRectArea > 0) {
+          var rectCenterX = maxRect.x + (maxRect.width/2);
+          var rectCenterY = maxRect.y + (maxRect.height/2);
+          faceX = (rectCenterX - 160) * (window.innerWidth/320) * 50;
+          faceY = (rectCenterY - 120) * (window.innerHeight/240) * 50;
+        }
+
+        shouldSend = true;
+
+
+      });
+
+
+
+
+
+
+      yarp.onInit(function() {
+
+        let gazePortName = '/yarpjs/gaze/xd:o';
+        let imagePortName = '/yarpjs/gaze/img:i';
+        var gazePort = yarp.PortHandler.openPort(gazePortName);
+        var imagePort = yarp.PortHandler.openPort(imagePortName,'image');
+
+
+        initializeButton('connect-gaze-ctrl',gazePortName,false);
+        initializeButton('connect-stream-video',gazePortName,true);
+
+
+        function sendData() {
+
+
+          if(posX != 0 && posY != 0)
+          {
+            gazePort.write([-1, (posX/320 - 0.5),  (posY/240 - 0.3)]);
+          }
+
+          setTimeout(sendData,33);
+
+        }
+
+        sendData();
+
+        var virtual_img = new Image();
+
+        imagePort.onRead(function(img){
+
+          virtual_img.src = yarp.getImageSrc(img.compression_type,img.buffer);
+          contextImageStream.drawImage(virtual_img,0,0);
+
+        });
+
+
+      });
+
+
+
+
+
+
+
+
+      function initializeButton(btnName,btn_port_name,is_receiving) {
+
+        if(is_receiving === undefined)
+          is_receiving = true;
+
+        let btn = document.getElementById('btn-'+btnName);
+        let input = document.getElementById('input-'+btnName);
+        let form = document.getElementById('form-'+btnName);
+
+        let connected = false;
+        let initialized = false;
+
+        function toggleConnection() {
+          let other_port_name = input.value;
+
+          if(!connected)
+          {
+            input.setAttribute('disabled','true');
+            btn.classList.remove('btn-primary');
+            btn.innerHTML='Disconnect';
+
+            if(is_receiving)
+              yarp.Network.connect(other_port_name,btn_port_name);
+            else
+              yarp.Network.connect(btn_port_name,other_port_name);
+
+            connected = true;
+            initialized = true;
+          }
+          else
+          {
+            if(is_receiving)
+              yarp.Network.disconnect(other_port_name,btn_port_name);
+            else
+              yarp.Network.disconnect(btn_port_name,other_port_name);
+
+            input.removeAttribute('disabled');
+            btn.classList.add('btn-primary');
+            btn.innerHTML='Connect';
+
+            connected = false;
+          }
+
+        }
+
+        btn.onclick = toggleConnection;
+        form.addEventListener("submit", function(event){
+            event.preventDefault();
+            toggleConnection();
+        });
+          
+
+      }
+
+  }
+
+  </script>
+
+
+
+
+</html>

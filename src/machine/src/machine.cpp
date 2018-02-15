@@ -8,11 +8,12 @@ bool MachineModule::openPorts(const string &moduleName)
     status&=noObjectIn.open("/segment_crop/valid_detection:o");
     status&=objectBottleIn.open("/objectRecognizer/position:i");
     status&=objectBottleOut.open("/objectPointing/position:o");
-    status&=reachedPosIn.open("/high_five_ready:o");
+    status&=reachedPosIn.open("/high_five_ready:i");
     status&=rewardDetectorOut.open("/checkClassification/flag:o");
     status&=feedbackIn.open("/checkClassification/flag:i");
-    status&=homeOut.open("/homeOut/flag:o");
-    status&=homeIn.open("/homeIn/flag:i");
+    //status&=homeOut.open("/homeOut/flag:o");
+    //status&=homeIn.open("/homeIn/flag:i");
+    status&=positionControl.open("/position:o");
 
     if(!status)
     {
@@ -62,6 +63,7 @@ bool MachineModule::updateModule(void)
     }
     case CMD:
     {
+        // read unblocking
         break;
     }
     case POINT_ACTION:
@@ -73,6 +75,7 @@ bool MachineModule::updateModule(void)
         speechRecogn.write(cmdBottle, replyBottle);
         yInfo()<<"sending vocal command and waiting for 3D position...";
         // fill: no object detected
+        //Vector *posBottleIn=objectBottleIn.read(true);
         Bottle *posBottleIn=objectBottleIn.read(true);
         if(posBottleIn==NULL)
         {
@@ -80,19 +83,42 @@ bool MachineModule::updateModule(void)
             state=IDLE;
             return false;
         }
+        //yInfo()<<"got "<<posBottleIn->operator[](0)<<" "<<posBottleIn->operator[](1)<<" "<<posBottleIn->operator[](2);
+        if(posBottleIn->size()!=3)
+        {
+            yWarning()<<"posBottleIn not size 3...";
+            state=IDLE;
+            break;
+        }
         yInfo()<<"got "<<posBottleIn->get(0).asDouble()<<" "<<posBottleIn->get(1).asDouble()<<" "<<posBottleIn->get(2).asDouble();
-        yInfo()<<"sending...";
+        cmdBottle.clear();
+        cmdBottle.addString("Close_hand");
+        replyBottle.clear();
+        positionControl.write(cmdBottle, replyBottle);
+        yInfo()<<"closing hand...";
+        yInfo()<<"sending reaching position...";
         Bottle &posBottleOut=objectBottleOut.prepare();
+        //posBottleOut.clear();
+        //posBottleOut.addDouble(posBottleIn->operator[](0));
+        //posBottleOut.addDouble(posBottleIn->operator[](1));
+        //posBottleOut.addDouble(posBottleIn->operator[](2));
         posBottleOut=*posBottleIn;
         objectBottleOut.write();
         reachedPosIn.read(true);
         yInfo()<<"point action done...";
+        Time::delay(5.0);
+        cmdBottle.clear();
+        cmdBottle.addString("HighFive");
+        replyBottle.clear();
+        positionControl.write(cmdBottle, replyBottle);
+        Time::delay(3.0);
         yInfo()<<"arm in high five position";
         state=REWARD;
         break;
     }
     case REWARD:
     {
+        Bottle cmdBottle, replyBottle;
         yInfo()<<"reward state...";
         yInfo()<<"sending command to start reward detector...";
         Bottle &startReward=rewardDetectorOut.prepare();
@@ -109,24 +135,41 @@ bool MachineModule::updateModule(void)
         }
         feedback=feedbackBottle->get(0).asInt();
         yInfo()<<"got "<<feedback;
+        cmdBottle.clear();
+        if(feedback==0)
+            cmdBottle.addString("Shy");
+        else if(feedback==1)
+            cmdBottle.addString("Happy");
+        else
+            yInfo()<<"unkown cmd";
+        replyBottle.clear();
+        positionControl.write(cmdBottle, replyBottle);
+        Time::delay(10.0);
         state=HOME;
         break;
     }
     case HOME:
     {
-        yInfo()<<"home state...";
-        Bottle &startHome=homeOut.prepare();
-        startHome.clear();
-        startHome.addInt(feedback);
+        yInfo()<<"sending home state...";
+        Bottle cmdBottle, replyBottle;
+        cmdBottle.clear();
+        cmdBottle.addString("home");
+        replyBottle.clear();
+        positionControl.write(cmdBottle, replyBottle);
+        Time::delay(3.0);
+        //Bottle &startHome=homeOut.prepare();
+        //startHome.clear();
+        //startHome.addInt(feedback);
         yInfo()<<"sending feedback..."<<feedback;
-        homeOut.write();
-        yInfo()<<"waiting for done flag...";
-        if(homeIn.read(true)==NULL)
-        {
-            yWarning()<<"empty homeIn...";
-            state=IDLE;
-            return false;
-        }
+        //homeOut.write();
+        //yInfo()<<"waiting for done flag...";
+        //if(homeIn.read(true)==NULL)
+        //{
+            //yWarning()<<"empty homeIn...";
+            //state=IDLE;
+            //return false;
+        //}
+        yInfo()<<"in home...";
         feedback=2;
         state=IDLE;
         break;
@@ -200,8 +243,9 @@ bool MachineModule::interruptModule(void)
     reachedPosIn.interrupt();
     rewardDetectorOut.interrupt();
     feedbackIn.interrupt();
-    homeOut.interrupt();
-    homeIn.interrupt();
+    //homeOut.interrupt();
+    //homeIn.interrupt();
+    positionControl.interrupt();
     return true;
 }
 
@@ -216,7 +260,8 @@ bool MachineModule::close(void)
     reachedPosIn.close();
     rewardDetectorOut.close();
     feedbackIn.close();
-    homeOut.close();
-    homeIn.close();
+    //homeOut.close();
+    //homeIn.close();
+    positionControl.close();
     return true;
 }

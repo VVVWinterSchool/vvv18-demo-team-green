@@ -1,0 +1,571 @@
+<!doctype html>
+<html>
+  <head>
+    <title>yarp.js Receive Inertial Info</title>
+    
+
+    <meta name=viewport content="width=device-width, initial-scale=1">
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.1/css/font-awesome.min.css">
+
+
+
+    <style type="text/css">
+      
+      .flex-container {
+          display:flex;
+          flex-direction: column;
+          flex-wrap: nowrap;
+          justify-content: flex-start;
+          align-content: flex-start;
+          align-items: flex-start;
+          width:100%;
+          height:100%;
+      }
+          
+       
+       .flex-control-panel{
+          display: flex;
+          flex-direction: column;
+          justify-content: flex-start;
+          overflow: scroll;
+          width: 100%;
+          flex-grow: 3;
+          flex-shrink: 0;
+          /*flex-basis: 60%;*/
+        }
+        
+       .flex-console {
+          margin-top:1em;
+          width: 100%;
+          flex-grow: 2;
+          flex-shrink: 0;
+          overflow: auto;
+          background-color: black;
+          color: green;
+          display: flex;
+          flex-direction: column;
+          justify-content: flex-end;
+          align-content: flex-end;
+          align-items: flex-start;
+          padding: 0;
+          padding-bottom: 0.4em;
+          padding-top: 0.4em;
+          height: 13em;
+      }
+      .reply-from-server
+      {
+          color: tomato;
+      }
+       
+      .flex-commands {
+          display: flex;
+          flex-direction: row;
+          justify-content: flex-start;
+          flex-wrap:wrap;
+          width: 100%;
+          flex-grow: 1;
+          flex-shrink: 1;
+          margin-top: 1em;
+      }
+      .flex-commands > form
+      {
+        padding-left:1em;
+        padding-right:1em; 
+      }
+       .flex-button-container
+       {
+          display: flex;
+          flex-direction: row;
+          justify-content: flex-start;
+    
+          background-color: white; 
+          
+          padding-left:1em;
+          padding-right:1em;
+          flex-grow:1;
+       }
+        .flex-button-container:nth-child(odd) 
+        {
+          background-color: #eee; 
+        }
+        .btn{
+          font-size: 1.5em;
+        }
+       .flex-button
+       {
+          margin: 1em;
+          flex-grow: 1;
+          flex-shrink: 1;
+          flex-basis: 0;
+          font-size:1em;
+       }
+
+
+      .garden {
+        margin-top:2em;
+        margin-left:auto;
+        margin-right:auto;
+        margin-bottom: 2em;
+        position: relative;
+        width : 200px;
+        height: 200px;
+        border: 5px solid #CCC;
+        border-radius: 10px;
+      }
+
+      .ball {
+        position: absolute;
+        top   : 90px;
+        left  : 90px;
+        width : 20px;
+        height: 20px;
+        background: green;
+        border-radius: 100%;
+      }
+
+
+
+      #canvas-container {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        flex-wrap:wrap;
+      }
+
+      #megacanvas {
+      }
+
+      #send_inertial_data {
+        margin:auto;
+      }
+
+    </style>
+
+    <script src="/socket.io/socket.io.js"></script>
+  </head>
+
+
+<!-- ############  BODY ################# -->
+
+  <body>
+
+    <a id='send_inertial_data' class="btn btn-lg btn-primary disabled">Send Data</a>
+
+    <div id="chart_div"></div>
+
+    <div id="canvas-container">
+      <canvas id="megacanvas"></canvas>
+    </div>
+
+    <div class="garden">
+      <div class="ball"></div>
+    </div>
+
+    <pre class="output"></pre>
+
+  </body>
+
+<!-- ############  END BODY ################# -->
+
+
+
+
+
+  <script src="/jquery/dist/jquery.min.js"></script>
+
+  <script src="yarp.js"></script>
+
+  <!-- <script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script> -->
+
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+
+  <script src="three.min.js"></script>
+  <!-- <script src="//cdn.rawgit.com/mrdoob/three.js/master/build/three.min.js"></script> -->
+
+
+  <script>
+    var socket = io();    
+
+    yarp.init(socket);
+
+  </script>
+
+
+
+
+  <script>
+
+
+
+    // what to do as soon as the yarp module is ready
+    yarp.onInit(function() {
+
+      var port_orientation_in = yarp.PortHandler.openPort('/yarpjs/device/orientation:i');
+      var port_acceleration_in = yarp.PortHandler.openPort('/yarpjs/device/acceleration:i');
+
+      var port_orientation_out = yarp.PortHandler.openPort('/yarpjs/device/orientation:o');
+      var port_acceleration_out = yarp.PortHandler.openPort('/yarpjs/device/acceleration:o');
+
+
+      port_orientation_in.onRead(function(bottle){
+
+        var orientation = bottle.content.map(function(i){return parseFloat(i);})
+
+        handleOrientation(orientation);
+
+        drawData(orientation);
+
+        chartData(orientation);
+
+      });
+
+
+
+      yarp.Network.connect('/yarpjs/device/orientation:o','/yarpjs/device/orientation:i');
+      yarp.Network.connect('/yarpjs/device/acceleration:o','/yarpjs/device/acceleration:i');
+
+
+
+      var send_inertial_data_btn = document.getElementById('send_inertial_data');
+
+      var sending_inertial_data = false;
+
+      if (window.DeviceOrientationEvent) {
+
+          window.addEventListener("deviceorientation", function detect_deviceorientation() {
+
+            if(event.alpha == null || event.beta == null || event.gamma==null)
+              return;
+
+            window.removeEventListener("deviceorientation", detect_deviceorientation);
+            send_inertial_data_btn.classList.remove('disabled');
+
+            send_inertial_data_btn.onclick = function toggle_sending() {
+               send_inertial_data_btn.classList.toggle('sending');
+               sending_inertial_data = !sending_inertial_data;
+
+               if( sending_inertial_data )
+                {
+                  window.addEventListener("deviceorientation", function send_deviceorientation () {
+
+                    port_orientation_out.write([event.alpha,event.beta,event.gamma]);
+
+                  }, true);
+
+                  window.addEventListener('devicemotion', function send_devicemotion() {
+                    
+                    port_acceleration_out.write([event.acceleration.x,event.acceleration.y,event.acceleration.z])
+
+                  }, true);
+                }
+                else
+                {
+                  window.removeEventListener("deviceorientation",send_deviceorientation);
+                  window.removeEventListener("deviceomotion",send_devicemotion);
+                }
+            }
+
+
+          }, true);
+      }
+
+
+
+    });
+
+
+
+
+
+
+
+  </script>
+
+
+  <!-- Google Charts -->
+  <script>
+    google.charts.load('current', {packages: ['corechart', 'line']});
+    google.charts.setOnLoadCallback(_initData);
+
+
+    var chart = undefined;
+    var data = undefined;
+    var data_view = undefined;
+
+    var options = {
+      hAxis: {
+        title: 'Time'
+      },
+      vAxis: {
+        title: 'Angle'
+      },
+      colors: ['#a52714', '#097138','#53A757']
+    };
+
+    function drawLineColors() {
+      
+      chart.draw(data_view, options);
+ 
+    }
+
+
+    function _initData()
+    {
+      data = new google.visualization.DataTable();
+      data.addColumn('number', 'X');
+      data.addColumn('number', 'Alpha');
+      data.addColumn('number', 'Beta');
+      data.addColumn('number', 'Gamma');
+
+      data.addRow([ ,1,2,3]);
+
+      data_view = new google.visualization.DataView(data);
+      chart = new google.visualization.LineChart(document.getElementById('chart_div'));
+
+      drawLineColors();
+    }
+
+
+
+    var max_length = 30;
+    var curr_idx = 0;
+
+    var datum;
+    function _chartData() {
+      
+      if(datum != undefined && data != undefined)
+      {
+        datum.unshift(curr_idx);
+        curr_idx++;
+
+        data.addRow(datum);
+        if(data.getNumberOfRows()>max_length)
+          data_view.setRows(data.getNumberOfRows()-max_length,data.getNumberOfRows()-1);
+
+        drawLineColors();
+      }
+
+      datum = undefined;
+
+      setTimeout(_chartData,30);
+    }
+    _chartData();
+
+
+    function chartData(orientation) {
+      if(datum == undefined)
+       datum = orientation.splice(0);
+    }
+
+  </script>
+
+
+  <!-- Garden demo from: https://developer.mozilla.org/en-US/docs/Web/API/Detecting_device_orientation -->
+  <script>
+
+    var ball   = document.querySelector('.ball');
+    var garden = document.querySelector('.garden');
+    var output = document.querySelector('.output');
+
+    var maxX = garden.clientWidth  - ball.clientWidth;
+    var maxY = garden.clientHeight - ball.clientHeight;
+
+    function handleOrientation(orientation) {
+      var x = orientation[1];  // In degree in the range [-180,180]
+      var y = orientation[2] // In degree in the range [-90,90]
+      var z = orientation[0] // In degree in the range [-90,90]
+
+      output.innerHTML  = "alpha : "  + z + "\n";
+      output.innerHTML += "beta : "   + x + "\n";
+      output.innerHTML += "gamma: "   + y + "\n";
+
+      // Because we don't want to have the device upside down
+      // We constrain the x value to the range [-90,90]
+      if (x >  90) { x =  90};
+      if (x < -90) { x = -90};
+
+      // To make computation easier we shift the range of 
+      // x and y to [0,180]
+      x += 90;
+      y += 90;
+
+      // 10 is half the size of the ball
+      // It center the positioning point to the center of the ball
+      ball.style.top  = (maxX*x/180 - 10) + "px";
+      ball.style.left = (maxY*y/180 - 10) + "px";
+    }
+
+
+  </script>
+
+
+
+  <!-- Three.js -->
+  <script>
+
+      var autoAlign = true;
+      var alignQuaternion = new THREE.Quaternion();
+      var orientationQuaternion = new THREE.Quaternion();
+
+      var quaternion = new THREE.Quaternion();
+      var quaternionLerp = new THREE.Quaternion();
+
+      var tempVector3 = new THREE.Vector3();
+      var tempMatrix4 = new THREE.Matrix4();
+      var tempEuler = new THREE.Euler(0, 0, 0, 'YXZ');
+      var tempQuaternion = new THREE.Quaternion();
+
+      var zee = new THREE.Vector3(0, 0, 1);
+      var up = new THREE.Vector3(0, 1, 0);
+      var v0 = new THREE.Vector3(0, 0, 0);
+      var euler = new THREE.Euler();
+      var q0 = new THREE.Quaternion(); // - PI/2 around the x-axis
+      var q1 = new THREE.Quaternion(- Math.sqrt(0.5), 0, 0, Math.sqrt(0.5));
+
+
+      var scene, camera, renderer, controls;
+      var cellphone, material;
+
+      init();
+      animate();
+
+      function init() {
+
+          scene = new THREE.Scene();
+          
+          camera = new THREE.PerspectiveCamera( 45, 1, 1, 2000 );
+          camera.applyMatrix( new THREE.Matrix4().makeTranslation( 0,0,200 ) );
+          // camera.applyMatrix( new THREE.Matrix4().makeRotationX( 0 ) );
+          // camera.position.y = 400;
+
+          camera.lookAt( scene.position );    
+
+          scene.add( new THREE.AmbientLight( 0x404040 ) );
+
+            var light = new THREE.DirectionalLight( 0xffffff );
+            light.position.set( 0, 1, 0 );
+            scene.add( light );
+
+
+            var pointLight =
+              new THREE.PointLight(0xFFFFFF);
+
+            // set its position
+            pointLight.position.x = 10;
+            pointLight.position.y = 50;
+            pointLight.position.z = 130;
+
+            // add to the scene
+            scene.add(pointLight);
+
+
+            var textureLoader = new THREE.TextureLoader();
+
+
+
+            var cellmaterial = new THREE.MeshLambertMaterial( {color: 0x274EC0 } );
+            var smartface = new THREE.MeshLambertMaterial({ color:0xffffff, map: textureLoader.load( 'images/smartface.png' ) });         
+
+            var bkgMaterial = new THREE.MeshLambertMaterial( {color: 0xD4D6D8} );
+            var bkgGeometry = new THREE.BoxGeometry( 1000, 1000, 5 , 1 , 1 , 1);
+            var bkg = new THREE.Mesh(bkgGeometry, bkgMaterial );
+            bkg.position.z = -300;
+            scene.add(bkg);
+
+
+          var geometry = new THREE.BoxGeometry( 45, 100, 5 , 1 , 1 , 1);
+
+          materials = [cellmaterial,smartface];
+          material = new THREE.MeshFaceMaterial(materials);
+
+          for(var i = 0; i < geometry.faces.length; i++)
+            geometry.faces[i].materialIndex = 0;
+          
+          geometry.faces[8].materialIndex = 1;
+          geometry.faces[9].materialIndex = 1;
+
+          // cellphone = new THREE.Mesh(geometry, material );
+          // cellphone = new THREE.Mesh(geometry, new THREE.MeshFaceMaterial() );
+          cellphone = new THREE.Mesh(geometry, material );
+
+          cellphone.rotation.reorder('YXZ');
+
+          // geometry.faces[ 4 ].color.setHex( 0xff0000 );
+          // geometry.faces[ 5 ].color.setHex( 0xff0000 );
+          // cellphone.position.set( -200, 0, 0 );
+          scene.add( cellphone );
+
+          
+          var renderer_options = {};
+          renderer_options.canvas = document.getElementById("megacanvas");
+          renderer_options.antialias = true;
+
+          renderer = new THREE.WebGLRenderer(renderer_options);
+          
+          var w_gain = 0.35;
+          var w_size = Math.floor(w_gain*window.innerWidth);
+          renderer.setSize(w_size,w_size);
+          renderer.setPixelRatio( window.devicePixelRatio );
+
+      }
+
+
+      function animate() {
+
+        requestAnimationFrame( animate );
+
+        render();
+
+      }
+
+
+      function render() {
+        renderer.render( scene, camera );
+      }
+
+      function drawData(orientation) {
+
+
+
+        // 'ZXY' for the device, but 'YXZ' for us
+        euler.set(deg2rad(orientation[1]), deg2rad(orientation[0]), - deg2rad(orientation[2]), 'YXZ');
+
+        quaternion.setFromEuler(euler);
+        quaternionLerp.slerp(quaternion, 0.5); // interpolate
+
+
+        if (autoAlign) orientationQuaternion.copy(quaternion); // interpolation breaks the auto alignment
+        else orientationQuaternion.copy(quaternionLerp);
+
+        // camera looks out the back of the device, not the top
+        orientationQuaternion.multiply(q1);
+
+        // adjust for screen orientation
+        orientationQuaternion.multiply(q0.setFromAxisAngle(zee, 0));
+
+        cellphone.quaternion.copy(alignQuaternion);
+        cellphone.quaternion.multiply(orientationQuaternion);
+
+      }
+
+
+      function deg2rad(val) {
+          return val * Math.PI / 180;  
+      }
+      
+
+  </script>
+
+</html>
+
+
+
+
+
+
+
+

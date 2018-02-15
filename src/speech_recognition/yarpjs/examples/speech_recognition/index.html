@@ -1,0 +1,335 @@
+<!doctype html>
+<html>
+  <head>
+    <title>yarp.js Speech Recognition Example</title>
+
+    <meta name=viewport content="width=device-width, initial-scale=1">
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.1/css/font-awesome.min.css">
+
+
+
+    <style type="text/css">
+      
+      .flex-container {
+          display:flex;
+          flex-direction: column;
+          flex-wrap: nowrap;
+          justify-content: flex-start;
+          align-content: flex-start;
+          align-items: flex-start;
+          width:100%;
+          height:100%;
+      }
+          
+       
+       .flex-control-panel{
+          display: flex;
+          flex-direction: column;
+          justify-content: flex-start;
+          overflow: scroll;
+          width: 100%;
+          flex-grow: 3;
+          flex-shrink: 0;
+          /*flex-basis: 60%;*/
+        }
+        
+       .flex-console {
+          margin-top:1em;
+          width: 100%;
+          flex-grow: 2;
+          flex-shrink: 0;
+          overflow: auto;
+          background-color: black;
+          color: green;
+          display: flex;
+          flex-direction: column;
+          justify-content: flex-end;
+          align-content: flex-end;
+          align-items: flex-start;
+          padding: 0;
+          padding-bottom: 0.4em;
+          padding-top: 0.4em;
+          height: 13em;
+      }
+
+      .flex-console li {
+        margin-left:0.4em;
+      }
+
+      .reply-from-server
+      {
+          color: tomato;
+      }
+       
+      .flex-commands {
+          display: flex;
+          flex-direction: row;
+          justify-content: flex-start;
+          flex-wrap:wrap;
+          width: 100%;
+          flex-grow: 1;
+          flex-shrink: 1;
+          margin-top: 1em;
+      }
+      .flex-commands > form
+      {
+        padding-left:1em;
+        padding-right:1em; 
+      }
+       .flex-button-container
+       {
+          display: flex;
+          flex-direction: row;
+          justify-content: flex-start;
+    
+          background-color: white; 
+          
+          padding-left:1em;
+          padding-right:1em;
+          flex-grow:1;
+       }
+        .flex-button-container:nth-child(odd) 
+        {
+          background-color: #eee; 
+        }
+        .btn{
+          font-size: 1.5em;
+        }
+       .flex-button
+       {
+          margin: 1em;
+          flex-grow: 1;
+          flex-shrink: 1;
+          flex-basis: 0;
+          font-size:1em;
+       }
+
+
+        .invisible {
+            display: none;
+        }
+
+        #description {
+            padding: 3em;
+        }
+
+        #description * {
+            text-align: center;
+        }
+
+        #description p {
+            font-size: 1.3em;
+            margin-top: 3em;
+        }
+
+        #description b {
+            font-weight: bold;
+            color: cornflowerblue;
+        }
+
+        #description h1 b {
+            font-family: 'Lobster', serif;
+        }
+
+        #description p.danger {
+            margin: 0;
+            color: crimson;
+        } 
+
+
+    </style>
+
+    <script src="/socket.io/socket.io.js"></script>
+  </head>
+
+
+  <body>
+
+    <div class='flex-container'>
+
+      <ul id="messages" class='flex-console'>
+      </ul>
+
+
+      <div class='flex-commands'>
+        
+
+
+        <form action = "" id='form-speech-recognition' class="form-inline" style="margin-bottom: 1em">      
+        
+          <button id='btn-voice' type="button" class="btn" onClick="toggleVoiceBTN(this)" data-toggle="button" aria-pressed="false" autocomplete="off">
+            <i class="fa fa-microphone-slash fa-fw" style='margin-right:0.3em' aria-hidden="true"></i>Voice Recognition
+          </button>
+
+
+        </form>
+
+
+
+
+        <form action = "" id='form-speech-synthesis' class="form-inline" style="margin-bottom: 1em">      
+
+          <input type="text" class="form-speak" id="speak-message-text" placeholder="Hello yarp js!" value='Hello yarp js!'>
+
+          <button id='btn-speak' type="button" class="btn btn-primary" onClick="speakBTN()" data-toggle="button" aria-pressed="false" autocomplete="off">
+            <i class="fa fa-bullhorn fa-fw" style='margin-right:0.3em' aria-hidden="true"></i>Speak
+          </button>
+
+
+
+        </form>
+
+
+        <form style="font-size: 1.2em">
+          
+          <label class="radio-inline" style"marign-left:1em;">
+          <input type="radio" name="language" onClick="toggleLanguageEN()" id="inlineRadio1" value="en" checked> English
+          </label>
+          <label class="radio-inline" style="margin-left:0.5em">
+            <input type="radio" name="language" onClick="toggleLanguageIT()" id="inlineRadio2" value="it"> Italian
+          </label>
+        </form>
+      </div>
+
+
+    </div>
+
+    <div id='description' class='visible'>
+      <h1>Speech Recognition and Synthesis</h1>
+      
+      <p class='danger'>! This demo works only on Chrome browsers</p>
+      
+      <p>
+        This example shows how speech recognition API available for modern browser can be used to recognize human speech and send the recognized sentences over the YARP network as a string within a Bottle. Recognized sentences are written by the port <b>/yarpjs/speech/rec:o</b>. 
+      </p>
+
+      <p>
+        Also speech synthesis APIs are available. You can write to port <b>/yarpjs/speech/tts:i</b> bottles containing a single string and yarp.js will read them aloud.
+      </p>
+      
+    </div>
+
+  </body>
+
+  <script src="/jquery/dist/jquery.min.js"></script>
+  
+  <script src="/yarp.js"></script>
+
+
+  <script>
+    var socket = io();    
+
+    yarp.init(socket);
+  </script>
+
+
+
+  <script>
+
+
+    // what to do as soon as the yarp module is ready
+    yarp.onInit(function() {
+
+      // ----- Speech Recognition
+      
+      // open port sending out recognized speech
+      var yarpSpeechRecPort = yarp.PortHandler.openPort('/yarpjs/speech/rec:o');
+      
+      // set the action to perform after speech recognition
+      yarp.Recognizer.addEventListener('yarp speech finished', function (e) {
+          $('#messages').append('<li><samp>$> Recognized: '+e.detail[0].transcript+'</samp></li>');
+
+          yarpSpeechRecPort.write(e.detail[0].transcript);
+        }, false);
+      
+      yarp.Recognizer.enableAutorestart();
+      
+      // begin session with speech recognition off
+      yarp.Recognizer.stop();
+
+
+      // ----- Speech Synthesis
+
+      // open port for receiving messages to produce
+      var yarpSpeakPort = yarp.PortHandler.openPort('/yarpjs/speech/tts:i');
+
+      // set the action to perform whenever a message is read
+      yarpSpeakPort.onRead(function(msg){
+        
+        speakAndWrite(msg.content);
+        
+      })
+
+    });
+
+
+  </script>
+
+
+
+  <script>
+
+      function toggleVoiceBTN(el)
+      {
+        if($(el).hasClass('btn-primary'))
+        {
+          yarp.Recognizer.stop();
+          $(el).removeClass('btn-primary');
+          $(el).find('i').removeClass('fa-microphone');
+          $(el).find('i').addClass('fa-microphone-slash');
+        }
+        else
+        {
+          yarp.Recognizer.start();
+          $(el).addClass('btn-primary');
+          $(el).find('i').removeClass('fa-microphone-slash');
+          $(el).find('i').addClass('fa-microphone');
+        }
+      }
+
+
+      function speakAndWrite(msg)
+      {
+        yarp.Synthetizer.speak(msg);
+        $('#messages').append('<li><samp class="reply-from-server">$> Synthetized: '+msg+'</samp></li>');
+      }
+
+      function speakBTN()
+      {
+        var msg = $('#speak-message-text').val();
+        speakAndWrite(msg);
+      }
+
+      function toggleLanguageIT()
+      {
+        yarp.Recognizer.setLang('it');
+        yarp.Synthetizer.setLang('it');
+      }
+
+      function toggleLanguageEN()
+      {
+        yarp.Recognizer.setLang('en');
+        yarp.Synthetizer.setLang('en');
+      }
+
+      $("#form-speech-synthesis").submit(function(e){
+        e.preventDefault();
+        speakBTN();
+      });
+
+  </script>
+
+
+</html>
+
+
+
+
+
+
+
+

@@ -1,0 +1,93 @@
+<application>
+    <name>Closest object segmenter</name>
+
+    <dependencies>
+    </dependencies>
+    <!-- Segmentation Modules -->
+    <module>
+        <name>SFM</name>
+        <node>localhost</node>
+    </module>    	
+    <module>
+        <name>segment_crop</name>
+        <node>localhost</node>
+    </module>
+    <module>
+        <name>yarpview</name>
+        <node>localhost</node>
+        <parameters>--name /processed_disp --x 0 --y 0</parameters>
+    </module>
+    <module>
+        <name>yarpview</name>
+        <node>localhost</node>
+        <parameters>--name /disp_map --x 300 --y 0</parameters>
+    </module>
+    
+    <!-- Classification Modules -->
+
+    <module>
+        <name>objectRecognizer</name>
+        <parameters>--from objectRecognizer-green.ini</parameters>
+        <node>lh</node>
+    </module>
+
+    <module>
+        <name>yarpview</name>
+        <parameters>--name /recview</parameters>
+        <node>lh</node>
+    </module>
+
+    <!-- Classification Connections -->
+
+    <connection>
+        <from>/icub/camcalib/left/out</from>
+        <to>/objectRecognizer/img:i</to>
+        <protocol>tcp</protocol>
+    </connection>
+
+    <connection>
+        <from>/objectRecognizer/view:o</from>
+        <to>/recview</to>
+        <protocol>tcp</protocol>
+    </connection>
+
+    <!-- Segmentation Connections -->
+    <connection>
+        <from>/SFM/disp:o</from>
+        <to>/segment_crop/disparity:i</to>
+        <protocol>tcp</protocol>
+    </connection>	
+    <connection>
+	<from>/icub/camcalib/left/out</from>
+	<to>/segment_crop/RGBimage:i</to>
+	<protocol>tcp</protocol>
+    </connection>
+    <connection>
+        <from>/segment_crop/debugRGB:o</from>
+        <to>/processed_disp</to>
+        <protocol>tcp</protocol>
+    </connection>
+    <connection>
+        <from>/SFM/disp:o</from>
+        <to>/disp_map</to>
+        <protocol>tcp</protocol>
+    </connection>
+    <connection>
+        <from>/segment_crop/rpcSFM</from>
+        <to>/SFM/rpc</to>
+        <protocol>tcp</protocol>
+    </connection>
+    
+    <connection>
+        <from>/SFM/disp:o</from>
+        <to>/segment_crop/disparity:i</to>
+        <protocol>tcp</protocol>
+    </connection>
+    
+    <!-- Mutual Connexion -->
+    <connection>
+        <from>/segment_crop/crops:o</from>
+        <to>/objectRecognizer/crops:i</to>
+        <protocol>tcp</protocol>
+    </connection>
+</application>

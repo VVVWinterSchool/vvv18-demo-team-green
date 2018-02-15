@@ -1,0 +1,262 @@
+<!doctype html>
+<html>
+  <head>
+    <title>yarp.js Send Inertial Info</title>
+
+    <meta name=viewport content="width=device-width, initial-scale=1">
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.1/css/font-awesome.min.css">
+
+
+
+    <style type="text/css">
+      
+      .flex-container {
+          display:flex;
+          flex-direction: column;
+          flex-wrap: nowrap;
+          justify-content: flex-start;
+          align-content: flex-start;
+          align-items: flex-start;
+          width:100%;
+          height:100%;
+      }
+          
+       
+       .flex-control-panel{
+          display: flex;
+          flex-direction: column;
+          justify-content: flex-start;
+          overflow: scroll;
+          width: 100%;
+          flex-grow: 3;
+          flex-shrink: 0;
+          /*flex-basis: 60%;*/
+        }
+        
+       .flex-console {
+          margin-top:1em;
+          width: 100%;
+          flex-grow: 2;
+          flex-shrink: 0;
+          overflow: auto;
+          background-color: black;
+          color: green;
+          display: flex;
+          flex-direction: column;
+          justify-content: flex-end;
+          align-content: flex-end;
+          align-items: flex-start;
+          padding: 0;
+          padding-bottom: 0.4em;
+          padding-top: 0.4em;
+          height: 13em;
+      }
+      .reply-from-server
+      {
+          color: tomato;
+      }
+       
+      .flex-commands {
+          display: flex;
+          flex-direction: row;
+          justify-content: flex-start;
+          flex-wrap:wrap;
+          width: 100%;
+          flex-grow: 1;
+          flex-shrink: 1;
+          margin-top: 1em;
+      }
+      .flex-commands > form
+      {
+        padding-left:1em;
+        padding-right:1em; 
+      }
+       .flex-button-container
+       {
+          display: flex;
+          flex-direction: row;
+          justify-content: flex-start;
+    
+          background-color: white; 
+          
+          padding-left:1em;
+          padding-right:1em;
+          flex-grow:1;
+       }
+        .flex-button-container:nth-child(odd) 
+        {
+          background-color: #eee; 
+        }
+        .btn{
+          font-size: 1.5em;
+        }
+       .flex-button
+       {
+          margin: 1em;
+          flex-grow: 1;
+          flex-shrink: 1;
+          flex-basis: 0;
+          font-size:1em;
+       }
+
+
+      .garden {
+        margin-top:2em;
+        margin-left:auto;
+        margin-right:auto;
+        margin-bottom: 2em;
+        position: relative;
+        width : 200px;
+        height: 200px;
+        border: 5px solid #CCC;
+        border-radius: 10px;
+      }
+
+      .ball {
+        position: absolute;
+        top   : 90px;
+        left  : 90px;
+        width : 20px;
+        height: 20px;
+        background: green;
+        border-radius: 100%;
+      }
+
+    </style>
+
+    <script src="/socket.io/socket.io.js"></script>
+  </head>
+
+
+  <body>
+
+    <div class="garden">
+      <div class="ball"></div>
+    </div>
+
+    <pre class="output"></pre>
+    <pre class="output_acc"></pre>
+
+  </body>
+
+  <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+  
+  <script src="yarp.js"></script>
+
+  <script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+  <script src="jsnetworkx.js"></script>
+
+
+  <script>
+    var socket = io();    
+
+    yarp.init(socket);
+
+  </script>
+
+
+  <script>
+
+
+    // what to do as soon as the yarp module is ready
+    yarp.onInit(function() {
+
+      var port_orientation = yarp.PortHandler.openPort('/yarpjs/device/orientation:o');
+      var port_acceleration = yarp.PortHandler.openPort('/yarpjs/device/acceleration:o');
+
+      if (window.DeviceOrientationEvent) {
+        window.addEventListener("deviceorientation", function () {
+
+          port_orientation.write([event.alpha,event.beta,event.gamma]);
+
+          handleOrientation(event);
+
+        }, true);
+      } 
+
+      if (window.DeviceMotionEvent) {
+        window.addEventListener('devicemotion', function () {
+          port_acceleration.write([event.acceleration.x,event.acceleration.y,event.acceleration.z])
+
+          handleAcceleration(event);
+
+          }, true);
+      }
+
+      yarp.Network.connect('/yarpjs/device/orientation:o','/yarpjs/device/orientation:i');
+      yarp.Network.connect('/yarpjs/device/acceleration:o','/yarpjs/device/acceleration:i');
+
+    });
+
+
+
+  </script>
+
+
+  <script>
+    var ball   = document.querySelector('.ball');
+    var garden = document.querySelector('.garden');
+    var output = document.querySelector('.output');
+    var output_acc = document.querySelector('.output_acc');
+
+    var maxX = garden.clientWidth  - ball.clientWidth;
+    var maxY = garden.clientHeight - ball.clientHeight;
+
+    function handleOrientation(event) {
+      var x = event.beta;  // In degree in the range [-180,180]
+      var y = event.gamma; // In degree in the range [-90,90]
+      var z = event.alpha; // In degree in the range [-90,90]
+
+
+      output.innerHTML  = "alpha : " + z + "\n";
+      output.innerHTML += "beta: " + x + "\n";
+      output.innerHTML += "gamma: " + y + "\n";
+ 
+      // Because we don't want to have the device upside down
+      // We constrain the x value to the range [-90,90]
+      if (x >  90) { x =  90};
+      if (x < -90) { x = -90};
+
+      // To make computation easier we shift the range of 
+      // x and y to [0,180]
+      x += 90;
+      y += 90;
+
+      // 10 is half the size of the ball
+      // It center the positioning point to the center of the ball
+      ball.style.top  = (maxX*x/180 - 10) + "px";
+      ball.style.left = (maxY*y/180 - 10) + "px";
+    }
+
+
+    function handleAcceleration(event) {
+      var x = - event.acceleration.x + event.accelerationIncludingGravity.x;  // In degree in the range [-180,180]
+      var y = - event.acceleration.y + event.accelerationIncludingGravity.y; // In degree in the range [-90,90]
+      var z = - event.acceleration.z + event.accelerationIncludingGravity.z; // In degree in the range [-90,90]
+
+      output_acc.innerHTML  = "x : " + x + "\n";
+      output_acc.innerHTML += "y : " + y + "\n";
+      output_acc.innerHTML += "z : " + z + "\n";
+
+
+    }
+
+
+  </script>
+
+
+
+
+</html>
+
+
+
+
+
+
+
+

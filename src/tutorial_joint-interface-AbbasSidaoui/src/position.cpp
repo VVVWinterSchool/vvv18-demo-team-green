@@ -58,11 +58,6 @@ protected:
     IEncoders         *tdenc;
     IEncoders         *mdenc;
     IEncoders         *pdenc;
-    //int thumb_p = 9;
-    //int thumb_d = 10;
-    //int middle_p = 13;
-    //int middle_d = 14;
-    //int pinky = 15;
 
     //arm:
     int shoulder_pitch = 0;
@@ -106,14 +101,14 @@ protected:
        f_target=f_min+0.1*f_range;
    return f_target;
     }
-  void getpose(){
+/*  void getpose(){
       ileft_arm->getPose(l_pos,l_o);
       iright_arm->getPose(r_pos,r_o);
  yInfo()<<"l_pose"<<l_pos[0];
  yInfo()<<"r_pose"<<r_pos[0];
 
 
-  }
+  }*/
   void HighFive(){
         JointConf();
        //position move
@@ -121,18 +116,19 @@ protected:
        ipos_right->positionMove(shoulder_roll,17.4);
        ipos_right->positionMove(shoulder_yaw,12.0);
        ipos_right->positionMove(elbow,90.0);
-       ipos_right->positionMove(wrist_grosup,75.0);
-       ipos_right->positionMove(wrist_pitch,0.0);
-       ipos_right->positionMove(wrist_yaw,55.0);
+       ipos_right->positionMove(wrist_grosup,90.0);
+       ipos_right->positionMove(wrist_pitch,0);
+       ipos_right->positionMove(wrist_yaw,0);
        ipos_right->positionMove(hand_finger,55.0);
-       ipos_right->positionMove(thumb_oppose,11.53);
-       ipos_right->positionMove(thumb_p,60.78);
-       ipos_right->positionMove(thumb_d,-3.9);
-       ipos_right->positionMove(index_p,10);
-       ipos_right->positionMove(index_d,10.0);
-       ipos_right->positionMove(middle_p,10.0);
-       ipos_right->positionMove(middle_d,10.0);
-       ipos_right->positionMove(pinky,10.0);
+       ipos_right->positionMove(thumb_oppose,20);
+       ipos_right->positionMove(thumb_p,20);
+       ipos_right->positionMove(thumb_d,0);
+       ipos_right->positionMove(index_p,0);
+       ipos_right->positionMove(index_d,10);
+       ipos_right->positionMove(middle_p,10);
+       ipos_right->positionMove(middle_d,10);
+       ipos_right->positionMove(pinky,10);
+
        ipos_head->positionMove(neck_pitch,0.0);
        ipos_head->positionMove(neck_roll,0.0);
        ipos_head->positionMove(neck_yaw,0.0);
@@ -205,16 +201,18 @@ protected:
     ipos_head->positionMove(neck_roll,-1.20);
     ipos_head->positionMove(neck_yaw,2.993);
 
-    ipos_torso->positionMove(torso_pitch,-29.79);
+
+    ipos_torso->positionMove(torso_yaw,-29.0);
     ipos_torso->positionMove(torso_roll,-1.20);
-    ipos_torso->positionMove(torso_yaw,2.99);
+     ipos_torso->positionMove(torso_pitch,20.0);
+
 
     bool head_done1=false;
     bool torso_done1=false;
     bool left_done1=false;
     bool right_done1=false;
     double shy_t0=Time::now();
-    while (!(head_done1 || torso_done1 || left_done1 || right_done1)&&(Time::now()-shy_t0<10.0))
+    while (!(head_done1 || torso_done1 || left_done1 || right_done1)&&(Time::now()-shy_t0<20.0))
     {
         yInfo()<<"Waiting...";
         Time::delay(0.1);   // release the quantum to avoid starving resources
@@ -281,7 +279,7 @@ protected:
     bool left_done2=false;
     bool right_done2=false;
     double h_t0=Time::now();
-    while (!(head_done2 || torso_done2 || left_done2 || right_done2)&&(Time::now()-h_t0<10.0))
+    while (!(head_done2 || torso_done2 || left_done2 || right_done2)&&(Time::now()-h_t0<20.0))
     {
         yInfo()<<"Waiting...";
         Time::delay(0.1);   // release the quantum to avoid starving resources
@@ -335,39 +333,13 @@ protected:
         ipos_right->positionMove(pinky,10.8);
 
         ipos_head->positionMove(neck_pitch,0.0);
-                ipos_head->positionMove(neck_roll,0.0);
-                ipos_head->positionMove(neck_yaw,0.0);
-                ipos_torso->positionMove(torso_pitch,0.0);
-                ipos_torso->positionMove(torso_roll,0.0);
-                ipos_torso->positionMove(torso_yaw,0.0);
-
-/*        ipos_head->positionMove(neck_pitch,0.0);
         ipos_head->positionMove(neck_roll,0.0);
         ipos_head->positionMove(neck_yaw,0.0);
         ipos_torso->positionMove(torso_pitch,0.0);
         ipos_torso->positionMove(torso_roll,0.0);
         ipos_torso->positionMove(torso_yaw,0.0);
-        ipos_right->positionMove(hand_finger,55.00);
-        ipos_right->positionMove(thumb_oppose,11.53);
-        ipos_right->positionMove(thumb_p,60.78);
-        ipos_right->positionMove(thumb_d,-3.9);
-        ipos_right->positionMove(index_p,1.87);
-        ipos_right->positionMove(index_d,1.25);
-        ipos_right->positionMove(middle_p,4.59);
-        ipos_right->positionMove(middle_d,0.7);
-        ipos_right->positionMove(pinky,7.68);
 
 
-        yInfo()<<"home 1";
-        iright_arm->setTrajTime(1.0);
-        ileft_arm->setTrajTime(1.0);
-        yInfo()<<"home 2";
-
-        iright_arm->goToPose(r_pos,r_o);
-        ileft_arm->goToPose(l_pos,l_o);
-
-   //     iright_arm->waitMotionDone();
-   //     ileft_arm->waitMotionDone(); */
     }
     void Close_hand()
     {
@@ -423,11 +395,7 @@ public:
     {
          string robot=rf.check("robot",Value("icub")).asString();
         // open a client interface to connect to the joint controller
-/*        Property optJoint;
-        optJoint.put("device","remote_controlboard");
-        optJoint.put("remote","/"+robot+"/left_arm");
-        optJoint.put("local","/position/left_arm");
-*/
+
         //Left arm
         Property optJoint2;
         optJoint2.put("device","remote_controlboard");
@@ -452,7 +420,7 @@ public:
         optJoint5.put("remote","/"+robot+"/torso");
         optJoint5.put("local","/position/torso");
 
-        Property optc_l;
+/*        Property optc_l;
         optc_l.put("device","cartesiancontrollerclient");
         optc_l.put("remote","/"+robot+"/cartesianController/left_arm");
         optc_l.put("local","/cartesian_client/left_arm");
@@ -466,18 +434,8 @@ public:
         optc_t.put("device","cartesiancontrollerclient");
         optc_t.put("remote","/"+robot+"/cartesianController/torso");
         optc_t.put("local","/cartesian_client/torso");
+*/
 
-/*        Property optc_h;
-        optc_h.put("device","cartesiancontrollerclient");
-        optc_h.put("remote","/"+robot+"/cartesianController/head");
-        optc_h.put("local","/cartesian_client/head");
-*/
-        /*       if (!clienJoint.open(optJoint))
-        {
-            yError()<<"Unable to connect to /icubSim/left_arm";
-            return false;
-        }
-*/
         if (!leftArm.open(optJoint2))
         {
             yError()<<"Unable to connect to /left_arm";
@@ -498,7 +456,7 @@ public:
             yError()<<"Unable to connect to /torso";
             return false;
         }
-        if (!c_r.open(optc_r))
+ /*       if (!c_r.open(optc_r))
         {
             yError()<<"Unable to connect to /c_r";
             return false;
@@ -509,11 +467,10 @@ public:
             return false;
         }
 
-
+*/
         // open views
         bool ok=true;
- //       ok=ok && clienJoint.view(imod);
- //       ok=ok && clienJoint.view(ipos);
+
         ok=ok && rightArm.view(tdlim);
         ok=ok && rightArm.view(mdlim);
         ok=ok && rightArm.view(pdlim);
@@ -524,20 +481,20 @@ public:
 
         ok=ok && leftArm.view(imod_left);
         ok=ok && leftArm.view(ipos_left);
-        ok=ok && c_l.view(ileft_arm);
+ //       ok=ok && c_l.view(ileft_arm);
 
 
         ok=ok && rightArm.view(imod_right);
         ok=ok && rightArm.view(ipos_right);
-        ok=ok && c_r.view(iright_arm);
+ //       ok=ok && c_r.view(iright_arm);
 
         ok=ok && head.view(imod_head);
         ok=ok && head.view(ipos_head);
-//        ok=ok && c_h.view(ihead);
+
 
         ok=ok && torso.view(imod_torso);
         ok=ok && torso.view(ipos_torso);
-//        ok=ok && c_t.view(itorso);
+
 
 
         if (!ok)
@@ -547,7 +504,7 @@ public:
         }
 
         // open rpc port
-        rpc.open("/position");
+        rpc.open("/position:i");
 
         // attach the callback respond()
         attach(rpc);
@@ -555,9 +512,9 @@ public:
 
 
 
-         yInfo()<<"getting pose";
+  /*       yInfo()<<"getting pose";
         getpose();
-         yInfo()<<"finished configuration";
+         yInfo()<<"finished configuration";*/
           return true;
     }
 
@@ -569,10 +526,8 @@ public:
         rightArm.close();
         head.close();
         torso.close();
-        c_l.close();
-        c_r.close();
-//        c_h.close();
-//        c_t.close();
+//        c_l.close();
+//        c_r.close();
 
         return true;
     }
@@ -582,27 +537,27 @@ public:
         if (cmd.get(0).asString()=="Close_hand")
         {
             Close_hand();
-            reply.addString("ack");
+            reply.addString("Close_hand_done");
         }
         else if (cmd.get(0).asString()=="Shy")
         {
             Shy();
-            reply.addString("ack");
+            reply.addString("Shy_done");
         }
         else if (cmd.get(0).asString()=="HighFive")
         {
             HighFive();
-            reply.addString("ack");
+            reply.addString("HighFive_done");
         }
         else if (cmd.get(0).asString()=="home")
         {
             home();
-            reply.addString("ack");
+            reply.addString("home_done");
         }
         else if (cmd.get(0).asString()=="Happy")
         {
             Happy();
-            reply.addString("ack");
+            reply.addString("Happy_done");
         }
         else if (cmd.get(0).asString()=="enc")
         {

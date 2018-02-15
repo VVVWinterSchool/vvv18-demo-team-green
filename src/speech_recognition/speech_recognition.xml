@@ -16,30 +16,34 @@
 	<module>
       <name>userPreference</name>
       <parameters>--period 1.0 --rpc_classifier_server /objectRecognizer/userLabel/rpc:i </parameters>
-      <!-- <environment>YARP_FORWARD_LOG_ENABLE=1</environment> -->
+      <environment>YARP_FORWARD_LOG_ENABLE=1</environment>
       <node>localhost</node>
   	</module>
   
   <module>
-      <name>YarpJS</name>
-      <!--<parameters>--robot icub</parameters>
+      <name>node</name>
+      <parameters>server/run_server.js</parameters>
+      <workdir>YOUR_FOLDER_LOCATION/vvv18-demo-team-green/src/speech_recognition/yarpjs/</workdir>
       <environment>YARP_FORWARD_LOG_ENABLE=1</environment>
-      <node>localhost</node>-->
+      <node>localhost</node>
   	</module>
   	
-    <connection>
-    <from>/yarpjs/speech/rec:o</from>
-    <to>/userPreference/text_from_speech:i</to>
-    <protocol>tcp</protocol>
-</connection>
+	<connection>
+    		<from>/userPreference/control/rpc:o</from>
+    		<to>/userPreference/control/rpc:i</to>
+    		<protocol>tcp</protocol>
+	</connection>
+  	
+    	<connection>
+	    <from>/yarpjs/speech/rec:o</from>
+	    <to>/userPreference/text_from_speech:i</to>
+	    <protocol>tcp</protocol>
+	</connection>
 
-<connection>
-    <from>/userPreference/user_label/rpc:o</from>
-    <to>/objectRecognizer/userLabel/rpc:i </to>
-    <protocol>tcp</protocol>
-</connection>
+	<connection>
+		<from>/userPreference/user_label/rpc:o</from>
+		<to>/objectRecognizer/userLabel/rpc:i </to>
+		<protocol>tcp</protocol>
+	</connection>
   
-
-
-
 </application>

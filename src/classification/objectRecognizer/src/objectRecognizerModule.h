@@ -44,7 +44,7 @@ using namespace yarp::sig;
 using namespace yarp::math;
 
 #define RADIUS 256
-#define FLAG_UNIT_TEST true
+#define FLAG_UNIT_TEST false
 
 class ObjectRecognizerModule: public RFModule
 {

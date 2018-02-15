@@ -27,14 +27,15 @@ private:
 
     RpcServer commandPort;
     RpcClient speechRecogn;
+    RpcClient positionControl;
     BufferedPort<Bottle> noObjectIn;
     BufferedPort<Bottle> objectBottleIn;
     BufferedPort<Bottle> objectBottleOut;
     BufferedPort<Bottle> reachedPosIn;
     BufferedPort<Bottle> rewardDetectorOut;
     BufferedPort<Bottle> feedbackIn;
-    BufferedPort<Bottle> homeOut;
-    BufferedPort<Bottle> homeIn;
+    //BufferedPort<Bottle> homeOut;
+    //BufferedPort<Bottle> homeIn;
 
     bool openPorts(const string &moduleName);
 
