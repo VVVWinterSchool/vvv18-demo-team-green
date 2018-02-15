@@ -34,8 +34,11 @@ using namespace yarp::math;
 
 class CtrlModule: public RFModule
 {
-    BufferedPort<Bottle> inputPort;
-    BufferedPort<Bottle> outputPort;
+    BufferedPort<Bottle> inputObjectPositionPort;
+    // port for reading user feedback
+    //BufferedPort<Bottle> outputPort;
+
+
 
     yarp::sig::Vector targetObjectPosition;
 
@@ -264,6 +267,11 @@ public:
         option.put("remote","/icubSim/cartesianController/right_arm");
         option.put("local","/cartesian_client/right_arm");
 
+        if (!configPorts())
+        {
+            return false;
+        }
+
         // let's give the controller some time to warm up
         bool ok=false;
         double t0=Time::now();
@@ -327,6 +335,26 @@ public:
         return true;
     }
 
+    /****************************************************/
+    bool configPorts()
+    {
+        // open the input port
+        if (!inputObjectPositionPort.open("/objectPointing/position:i"))
+        {
+            yError()<<"error opening input port for client";
+            return false;
+        }
+
+        return true;
+    }
+
+
+    bool closePorts()
+    {
+        inputObjectPositionPort.close();
+        // also close other ports of Abbas
+    }
+
     virtual bool close()
     {
         yInfo()<<"Closing... ";
@@ -337,6 +365,8 @@ public:
         // it's a good rule to restore the controller
         // context as it was before opening the module
         arm->restoreContext(startup_context_id);
+
+        closePorts();
 
         client.close();
 
@@ -354,12 +384,35 @@ public:
         yInfo()<<"UpdateModule is called!";
         if (!threadCalled)
         {
+            Bottle* bottle = NULL;
+            bottle = inputObjectPositionPort.read(); // blocking read
+            if (bottle==NULL)
+            {
+                yError()<<"No bottle received through input object position port.";
+                return false;
+            }
+            else if (bottle!=NULL)
+            {
+                // check that the movement requested has been done and
+                // update the boolean variable "idle"
+                // FILL IN THE CODE (OK?)+++
+                // try to move the arm
+
+                //ipos->checkMotionDone(&idle);
+                // moveArm(bottle);
+                targetObjectPosition[0] = bottle->get(0).asDouble();
+                targetObjectPosition[1] = bottle->get(1).asDouble();
+                targetObjectPosition[2] = bottle->get(2).asDouble();
+            }
+
+
+
             yInfo()<<"Pointing operations start!";
             threadCalled = true;
 
             t=Time::now();
             // Generate a new target every (N) milliseconds
-            targetObjectPosition = generateTarget(); // fills GD
+            // targetObjectPosition = generateTarget(); // fills GD
 
             yarp::sig::Vector shoulderPosition = getShoulderPosition();
             double distanceFromShoulderToObject = getInterPointDistance(shoulderPosition, targetObjectPosition);
