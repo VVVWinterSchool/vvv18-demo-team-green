@@ -29,19 +29,37 @@ If the label match the database, the label is send to the classifier trough [ */
   <li><b>/userPreference/control/rpc:i</b>  Input port for TTS Synthesis</li>
 </ul> 
 
-## Set speech_recognition.xml file
+# Installation
+
+**From the main folder (speech_recognition):**
+
+```
+mkdir build;
+cd build
+cmake ..;
+make;
+make install
+```
+**In yarpjs**
+
+```
+cd yarpjs;
+npn install;
+./node_modules/cmake-js/bin/cmake-js;
+```
+*No need of a make , cmake-js is doing the job*
+
+**Set speech_recognition.xml file**
 
 In the file update this line:  *(my_folder_path)*/vvv18-demo-team-green/src/speech_recognition/build/yarpjs
   
-  
-
-
 
 # Run the modules
 
 In order to run the modules and interconnect them here is the procedure :
 
 <ol>
+    <li> Lauch yarpserver <li>
     <li>Run the nodeJs server of YarpsJs: In yarpjs open one terminal and type: <b>node server/run_server.js</b>
         </li>
     <li>Launch userPreferenceModule. In associated folder : <b>./userPreferenceModule</b> </li>
