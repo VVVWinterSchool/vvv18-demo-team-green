@@ -17,6 +17,7 @@
 
 #include <yarp/dev/Drivers.h>
 #include <yarp/dev/CartesianControl.h>
+#include <yarp/dev/GazeControl.h>
 #include <yarp/dev/PolyDriver.h>
 
 #include <yarp/os/BufferedPort.h>
@@ -38,13 +39,15 @@ class CtrlModule: public RFModule
     // port for reading user feedback
     BufferedPort<Bottle> outputPort;
 
-    PolyDriver         client;
+    PolyDriver         drvArm, drvGaze;
     ICartesianControl *arm;
+    IGazeControl      *igaze;
 
     Vector xd;
     Vector od;
 
     int startup_context_id;
+    int startup_context_gaze;
 
     double t;
     double t0;
@@ -57,16 +60,17 @@ class CtrlModule: public RFModule
 
 public:
 
-//    // Fixate eyes
-//    void fixate(const Vector &x)
-//    {
-//        // FILL IN THE CODE +++
-//        yInfo()<<"Fixating on the 3d point: "<<x[0]<<","<<x[1]<<","<<x[2];
-//        igaze->lookAtFixationPointSync(x);
-//        yInfo()<<"Waitinf for the end of visual fixation...";
-//        igaze->waitMotionDone();
-//        yInfo()<<"Fixation done.";
-//    }
+    // Fixate eyes
+    void fixate(const Vector &x)
+    {
+        // FILL IN THE CODE +++
+        yInfo()<<"Fixating on the 3d point: "<<x[0]<<","<<x[1]<<","<<x[2];
+        //igaze->lookAtFixationPointSync(x);
+        igaze->lookAtFixationPoint(x);
+        yInfo()<<"Waitinf for the end of visual fixation...";
+        // igaze->waitMotionDone();
+        yInfo()<<"Fixation done.";
+    }
 
     void extendIndexFingerLength(double lengthToAdd)
     {
@@ -223,9 +227,6 @@ public:
         // in the yz plane centered in [-0.3,-0.1,0.1] with radius=0.1 m
         // and frequency 0.1 Hz
 
-        //double MAX_DIST = - 1.5;
-        //double MIN_DIST = - 0.2;
-
         //xd[0] = std::min((std::rand() * MAX_DIST), MIN_DIST);
          xd[0]=-2.3 + (std::rand()% 2);
          xd[1]=-1.3 + (std::rand()% 10)*0.17; //0.1+0.1*cos(2.0*M_PI*0.1*(t-t0));
@@ -297,6 +298,13 @@ public:
         option.put("device","cartesiancontrollerclient");
         option.put("remote","/icubSim/cartesianController/right_arm");
         option.put("local","/cartesian_client/right_arm");
+        yDebug()<<"cartesian control property OK";
+
+        Property optGaze;
+        optGaze.put("device","gazecontrollerclient");
+        optGaze.put("remote","/iKinGazeCtrl");
+        optGaze.put("local","/tracker/gaze");
+        yInfo()<<"optGaze declared";
 
         yInfo()<<"Configuring ports...";
         if (!configPorts())
@@ -306,7 +314,7 @@ public:
         }
 
         // let's give the controller some time to warm up
-        if (client.open(option))
+        if (drvArm.open(option))
         {
             yInfo()<<"Successfully opened Cartesian controller!";
         }
@@ -316,9 +324,20 @@ public:
             return false;
         }
 
+        if (drvGaze.open(optGaze))
+        {
+            yInfo()<<"Successfully opened Gaze controller!";
+        }
+        else
+        {
+            yInfo()<<"Failed to open Cartesian controller!";
+            return false;
+        }
+
         yInfo()<<"Opening the view";
         // open the view
-        client.view(arm);
+        drvArm.view(arm);
+        drvGaze.view(igaze);
 
 
         yInfo()<<"Storing the context";
@@ -327,7 +346,15 @@ public:
         // the context contains the dofs status, the tracking mode,
         // the resting positions, the limits and so on.
         arm->storeContext(&startup_context_id);
+        igaze->storeContext(&startup_context_gaze);
 
+
+        // set trajectory time
+        yDebug()<<"Setting gaze tracking mode true";
+        igaze->setTrackingMode(true);
+        yDebug()<<"Setting neck and eyes trajectory time";
+        igaze->setNeckTrajTime(0.6);
+        igaze->setEyesTrajTime(0.4);
 
         yInfo()<<"Setting trajectory time";
         // set trajectory time
@@ -393,7 +420,8 @@ public:
 
         closePorts();
 
-        client.close();
+        drvArm.close();
+        drvGaze.close();
 
         yInfo()<<"done!";
         return true;
@@ -453,6 +481,9 @@ public:
 //                yInfo()<<"Point is inside reachable sphere";
 //                fingerAddedLength += 0.1;
 //                extendIndexFingerLength(fingerAddedLength);
+
+                yDebug()<<"Fixating eyes";
+                fixate(targetObjectPosition);
                 yInfo()<<"Pointing";
                 pointIndexFingerToTarget(targetObjectPosition);
 //                extendIndexFingerLength(-fingerAddedLength);
