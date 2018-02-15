@@ -98,7 +98,7 @@ bool ObjectRecognizerModule::configure(ResourceFinder &rf)
     if (!port_out_view.open(("/"+name+"/view:o").c_str()) ||
         !port_out_scores.open(("/"+name+"/scores:o").c_str()) ||
         !positionOutport.open(("/"+name+"/position:o").c_str()) ||
-        !imageInport.open(("/"+name+"/camera:i").c_str()) ||
+        !imageInport.open(("/"+name+"/img:i").c_str()) ||
         !segmentationInport.open(("/"+name+"/crops:i").c_str())){
         return false;
     }
@@ -185,7 +185,7 @@ bool ObjectRecognizerModule::updateModule()
     }
 
     // if there are any objects to classify, we get the current frame
-    yarp::sig::ImageOf<yarp::sig::PixelRgb> *img = imageInport.read();
+    Image* img = imageInport.read();
 
     if (img == NULL){
         return false;
@@ -197,7 +197,7 @@ bool ObjectRecognizerModule::updateModule()
     cv::Point tl(0,0);
     cv::Point br(0,0);
     bool ok = true;
-
+/*
     // Crop the images around objects and classify the objects
     if (!FLAG_UNIT_TEST){ //
         int numObj = box_pos->size()/2;
@@ -255,6 +255,10 @@ bool ObjectRecognizerModule::updateModule()
         ok = classify(img_crop_mat, max_score, classObject);
         if (!ok) return false;
         classifScoreMap[labels[classObject]] = max_score;
+        mutex.lock();
+        Bottle bot; bot.addDouble(0.0);
+        classifPosMap[labels[classObject]] = &bot;
+        mutex.unlock();
 
         // send out the predicted label over the cropped region
         int y_text, x_text;
@@ -282,11 +286,16 @@ bool ObjectRecognizerModule::updateModule()
         }
         port_out_scores.write(scores_bottle);
     }
+
     yarp::sig::ImageOf<yarp::sig::PixelRgb> &outImage  = port_out_view.prepare();
     IplImage out = img_mat;
     outImage.resize(out.width, out.height);
     cvCopy( &out, (IplImage *) outImage.getIplImage());
-    port_out_view.write();
+    port_out_view.write();    */
+
+    if (port_out_view.getOutputCount()){
+        port_out_view.write(img);
+    }
 
     return true;
 

@@ -23,12 +23,6 @@
         <node>lh</node>
     </module>
 
-    <module>
-        <name>yarpview</name>
-        <parameters>--name /rechist</parameters>
-        <node>lh</node>
-    </module>
-
     <!-- Connections -->
 
     <connection>
@@ -40,12 +34,6 @@
     <connection>
         <from>/objectRecognizer/view:o</from>
         <to>/recview</to>
-        <protocol>tcp</protocol>
-    </connection>
-
-    <connection>
-        <from>/objectRecognizer/hist:o</from>
-        <to>/rechist</to>
         <protocol>tcp</protocol>
     </connection>
 

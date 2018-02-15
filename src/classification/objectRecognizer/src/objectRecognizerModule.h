@@ -54,12 +54,12 @@ class ObjectRecognizerModule: public RFModule
         bool                   voiceCommandTriggered;
         bool                   noObject;
 
-        yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> > imageInport;
+        BufferedPort<Image>    imageInport;
         BufferedPort<Bottle>   segmentationInport;
-        RpcServer               userPrefInport;
+        RpcServer              userPrefInport;
 
         BufferedPort<Bottle>   positionOutport;
-        yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> >  port_out_view;
+        Port                   port_out_view;
         Port                   port_out_scores;
 
         CaffeWrapper<float>    *caffe_wrapper;
