@@ -23,7 +23,7 @@
   <module>
       <name>node</name>
       <parameters>server/run_server.js</parameters>
-      <workdir>/localdata/cambuzar/Bureau/projet_iCub/vvv18-demo-team-green/src/speech_recognition/yarpjs/</workdir>
+      <workdir>YOUR_FOLDER_LOCATION/vvv18-demo-team-green/src/speech_recognition/yarpjs/</workdir>
       <environment>YARP_FORWARD_LOG_ENABLE=1</environment>
       <node>localhost</node>
   	</module>
