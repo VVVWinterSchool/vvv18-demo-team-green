@@ -121,18 +121,19 @@ protected:
        ipos_right->positionMove(shoulder_roll,17.4);
        ipos_right->positionMove(shoulder_yaw,12.0);
        ipos_right->positionMove(elbow,90.0);
-       ipos_right->positionMove(wrist_grosup,75.0);
-       ipos_right->positionMove(wrist_pitch,0.0);
-       ipos_right->positionMove(wrist_yaw,55.0);
+       ipos_right->positionMove(wrist_grosup,90.0);
+       ipos_right->positionMove(wrist_pitch,0);
+       ipos_right->positionMove(wrist_yaw,0);
        ipos_right->positionMove(hand_finger,55.0);
-       ipos_right->positionMove(thumb_oppose,11.53);
-       ipos_right->positionMove(thumb_p,60.78);
-       ipos_right->positionMove(thumb_d,-3.9);
-       ipos_right->positionMove(index_p,10);
-       ipos_right->positionMove(index_d,10.0);
-       ipos_right->positionMove(middle_p,10.0);
-       ipos_right->positionMove(middle_d,10.0);
-       ipos_right->positionMove(pinky,10.0);
+       ipos_right->positionMove(thumb_oppose,20);
+       ipos_right->positionMove(thumb_p,20);
+       ipos_right->positionMove(thumb_d,0);
+       ipos_right->positionMove(index_p,0);
+       ipos_right->positionMove(index_d,10);
+       ipos_right->positionMove(middle_p,10);
+       ipos_right->positionMove(middle_d,10);
+       ipos_right->positionMove(pinky,10);
+
        ipos_head->positionMove(neck_pitch,0.0);
        ipos_head->positionMove(neck_roll,0.0);
        ipos_head->positionMove(neck_yaw,0.0);
@@ -205,9 +206,11 @@ protected:
     ipos_head->positionMove(neck_roll,-1.20);
     ipos_head->positionMove(neck_yaw,2.993);
 
-    ipos_torso->positionMove(torso_pitch,-29.79);
+
+    ipos_torso->positionMove(torso_yaw,-29.0);
     ipos_torso->positionMove(torso_roll,-1.20);
-    ipos_torso->positionMove(torso_yaw,2.99);
+     ipos_torso->positionMove(torso_pitch,20.0);
+
 
     bool head_done1=false;
     bool torso_done1=false;
