@@ -49,7 +49,15 @@ public:
             {
                 if(str.compare("soda")==0)
                 {
-                    str = "sodabottle"; // HACK: label for soda = sodebottle
+                    str.assign( "sodabottle"); // HACK: label for soda = sodebottle
+                }
+                if(str.compare("Mouse")==0)
+                {
+                    str.assign( "mouse"); // HACK: label for soda = sodebottle
+                }
+                if(str.compare("Wallet")==0)
+                {
+                    str.assign( "wallet"); // HACK: label for soda = sodebottle
                 }
                 yInfo()<<"input from STT :"<<str;
                 isPreference(str);
