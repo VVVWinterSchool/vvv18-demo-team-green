@@ -25,3 +25,17 @@ If the label match the database, the label is send to the classifier trough [ */
   <li><b>/userPreference/user_label/rpc</b>  Port where the correct user *label*(string) is send to the classifier</li>
   <li><b>/userPreference/control/rpc:i</b>  Input port for TTS Synthesis</li>
 </ul> 
+
+# Run the modules
+
+In order to run the modules and interconnect them here is the procedure :
+
+<ol>
+    <li>Run the nodeJs server of YarpsJs: In yarpjs open one terminal and type: <b>node server/run_server.js</b>
+        </li>
+    <li>Launch userPreferenceModule. In associated folder : <b>./userPreferenceModule</b> </li>
+    <li>Open chrome/chromium at : <b>http://localhost:3000</b></li>
+    <li>Connect <b>/yarpjs/speech/rec:o</b> => <b>/userPreference/text_from_speech:i</b> </li>
+    <li>Connect <b>/userPreference/user_label/rpc</b> => <b>classifier rpc in server port</b> </li>
+    <li>Enjoy !! </li>
+</ol>
