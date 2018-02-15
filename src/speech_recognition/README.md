@@ -36,6 +36,6 @@ In order to run the modules and interconnect them here is the procedure :
     <li>Launch userPreferenceModule. In associated folder : <b>./userPreferenceModule</b> </li>
     <li>Open chrome/chromium at : <b>http://localhost:3000</b></li>
     <li>Connect <b>/yarpjs/speech/rec:o</b> => <b>/userPreference/text_from_speech:i</b> </li>
-    <li>Connect <b>/userPreference/user_label/rpc</b> => <b>classifier rpc in server port</b> </li>
+    <li>Connect <b>/userPreference/user_label/rpc</b> => <b>/objectRecognizer/userLabel/rpc:i</b> (from classifer module) </li>
     <li>Enjoy !! </li>
 </ol>
