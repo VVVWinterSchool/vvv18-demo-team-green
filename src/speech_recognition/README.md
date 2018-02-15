@@ -59,7 +59,7 @@ In the file update this line:  *(my_folder_path)*/vvv18-demo-team-green/src/spee
 In order to run the modules and interconnect them here is the procedure :
 
 <ol>
-    <li> Lauch yarpserver <li>
+    <li>Lauch yarpserver </li>
     <li>Run the nodeJs server of YarpsJs: In yarpjs open one terminal and type: <b>node server/run_server.js</b></li>
     <li>Launch userPreferenceModule. In associated folder : <b>./userPreferenceModule</b> </li>
     <li>Open chrome/chromium at : <b>http://localhost:3000</b></li>
