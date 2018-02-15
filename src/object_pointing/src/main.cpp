@@ -36,7 +36,7 @@ class CtrlModule: public RFModule
 {
     BufferedPort<Bottle> inputObjectPositionPort;
     // port for reading user feedback
-    //BufferedPort<Bottle> outputPort;
+    BufferedPort<Bottle> outputPort;
 
     PolyDriver         client;
     ICartesianControl *arm;
@@ -265,6 +265,13 @@ public:
             return false;
         }
 
+        // open the output port
+        if (!outputPort.open("/objectPointing/done:o"))
+        {
+            yError()<<"error opening output port for sending object pointing done signal";
+            return false;
+        }
+
         return true;
     }
 
@@ -369,6 +376,7 @@ public:
     bool closePorts()
     {
         inputObjectPositionPort.close();
+        outputPort.close();
         // also close other ports of Abbas
     }
 
@@ -450,6 +458,13 @@ public:
 //                extendIndexFingerLength(-fingerAddedLength);
 //                fingerAddedLength -= fingerAddedLength;
 //                yDebug()<<"Total added finger length: "<<fingerAddedLength;
+
+                yDebug()<<"Writing in the output port that the action is done";
+                Bottle &message=outputPort.prepare();
+                message.clear(); //important, objects get recycled
+                message.addInt(1); // true
+                outputPort.write();
+                yDebug()<<"Done";
 
                 threadCalled = false;
 
