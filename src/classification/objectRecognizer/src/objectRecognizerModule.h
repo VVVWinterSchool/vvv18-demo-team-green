@@ -51,15 +51,14 @@ class ObjectRecognizerModule: public RFModule
     protected:
 
         yarp::os::Mutex        mutex;
-        bool                   voiceCommandTriggered;
         bool                   noObject;
 
-        BufferedPort<Image>    imageInport;
+        BufferedPort<ImageOf<PixelRgb> > imageInport;
         BufferedPort<Bottle>   segmentationInport;
         RpcServer              userPrefInport;
 
-        BufferedPort<Bottle>   positionOutport;
-        Port                   port_out_view;
+        BufferedPort<Vector>   positionOutport;
+        BufferedPort<ImageOf<PixelRgb> > port_out_view;
         Port                   port_out_scores;
 
         CaffeWrapper<float>    *caffe_wrapper;
@@ -71,7 +70,7 @@ class ObjectRecognizerModule: public RFModule
 
         int                    radius;
 
-        std::map<std::string, Bottle*> classifPosMap;
+        std::map<std::string, Vector> classifPosMap;
         std::map<std::string, float> classifScoreMap;
 
         bool classify(cv::Mat& image_cropped, float& max_score, int& classObject);
