@@ -27,7 +27,7 @@ class userPreference:public RFModule
 
     float max_timeout_rpc_reply = 5.0f; // maximal waiting time for a timeout reply
     int nbTRial = 3; // nb of trial before trigering
-
+    
 public:
 
     double getPeriod()
@@ -99,29 +99,47 @@ public:
         Bottle cmd;
         Bottle response;
         cmd.addString(str);
-
-        for(int i=1;i<=nbTRial;i++)
+        string rps;
+        int i=1;
+        for(i;i<=nbTRial;i++)
         {
+
             if(label_rpc_out.write(cmd,response) == true)
-            //label_rpc_out.write(cmd,response);
             {
-                string rps = response.get(0).asString();
+                rps = response.toString().c_str();
                 yInfo()<<"rpc answer :"<<rps;
-                i=nbTRial; //get out of the condition
+                break; //get out of the condition
             }
             else
             {
                 yInfo()<<"Fail to call : trial "<<i;
-                //yarp::os::Time::delay(2);
-
                 if(i==nbTRial)
                 {
                     yInfo()<<"The classifier did not answered";
                     // @todo trigger event to controller
+                    return false;
                 }
+                Time::delay(1);
             }
+         }
 
+        // Redirection case based on the classifier feedback
+
+        if(rps.compare("label_ok")==0)
+        {
+            yInfo()<<"The label ("<< str <<") was received by the classifier :";
+            readytoSend = false;
         }
+        else if (rps.compare("label_invalid")==0)
+        {
+            yInfo()<<"Unkown label ("<< str <<") for the classifier";
+            //@todo : Trigger beahaviour : Reask for question
+         }
+        else
+        {
+            yInfo()<<"Unkown response -- clasifier returned :"<< rps;
+        }
+
         return true;
 
 
