@@ -22,7 +22,7 @@ class userPreference:public RFModule
 
     bool readytoSend = false; //Define if userPreference is able to send data
 
-    int period=1.0; //default value
+    double period=1.0; //default value
     std::string classifier_rpc_name = "/objectRecognizer/userLabel/rpc:i"; //default value
 
     float max_timeout_rpc_reply = 5.0f; // maximal waiting time for a timeout reply
@@ -205,6 +205,10 @@ public:
 
         if (rf.check("rpc_classifier_server"))
             classifier_rpc_name=rf.find("rpc_classifier_server").asString();
+        
+        if (rf.check("period"))
+            period=rf.find("period").asDouble();
+
 
 //        // @Todo : Strore here the alowed label from the file
 //        if(!readJsonFile())

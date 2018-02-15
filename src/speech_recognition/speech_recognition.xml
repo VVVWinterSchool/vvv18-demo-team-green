@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<?xml-stylesheet type="text/xsl" href="yarpmanifest.xsl"?>
+
+<application>
+  <name>speech_recognition</name>
+
+	<!-- <dependencies>
+      <port>/yarpjs/speech/rec:o</port>
+      <port>/yarpjs/speech/tts:i</port>
+      <port>/userPreference/text_from_speech:i</port>
+      <port>/userPreference/user_label/rpc</port>
+      <port>/userPreference/control/rpc:i</port>
+  </dependencies>
+  -->
+
+	<module>
+      <name>userPreference</name>
+      <parameters>--period 1.0 --rpc_classifier_server /objectRecognizer/userLabel/rpc:i </parameters>
+      <!-- <environment>YARP_FORWARD_LOG_ENABLE=1</environment> -->
+      <node>localhost</node>
+  	</module>
+  
+  <module>
+      <name>YarpJS</name>
+      <!--<parameters>--robot icub</parameters>
+      <environment>YARP_FORWARD_LOG_ENABLE=1</environment>
+      <node>localhost</node>-->
+  	</module>
+  	
+    <connection>
+    <from>/yarpjs/speech/rec:o</from>
+    <to>/userPreference/text_from_speech:i</to>
+    <protocol>tcp</protocol>
+</connection>
+
+<connection>
+    <from>/userPreference/user_label/rpc:o</from>
+    <to>/objectRecognizer/userLabel/rpc:i </to>
+    <protocol>tcp</protocol>
+</connection>
+  
+
+
+
+</application>
