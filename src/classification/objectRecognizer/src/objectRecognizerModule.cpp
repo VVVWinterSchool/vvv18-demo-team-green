@@ -179,7 +179,7 @@ bool ObjectRecognizerModule::updateModule()
             mutex.lock();
             noObject = true;
             mutex.unlock();
-            return false;
+            return true;
         }
         mutex.lock();
         noObject = false;
@@ -212,7 +212,7 @@ bool ObjectRecognizerModule::updateModule()
             tl.y = box_pos->get(i*2).asList()->get(1).asInt();
             br.x = box_pos->get(i*2).asList()->get(2).asInt();
             br.y = box_pos->get(i*2).asList()->get(3).asInt();
-            cropImage(img_mat, img_crop_mat, tl, br);
+            if (!cropImage(img_mat, img_crop_mat, tl, br)) return true;
             float max_score = 0;
             int classObject = 0;
             ok = classify(img_crop_mat, max_score, classObject);
@@ -258,7 +258,7 @@ bool ObjectRecognizerModule::updateModule()
             br.y = y+r;
         }
         // crop and classify
-        cropImage(img_mat, img_crop_mat, tl, br);
+        if (!cropImage(img_mat, img_crop_mat, tl, br)) return true;
         float max_score = 0;
         int classObject = 0;
         ok = classify(img_crop_mat, max_score, classObject);
@@ -310,6 +310,10 @@ bool ObjectRecognizerModule::updateModule()
 
 bool ObjectRecognizerModule::cropImage(const cv::Mat& in_image, cv::Mat& out_image, cv::Point tl, cv::Point br){
     cv::Rect img_ROI = cv::Rect(tl, br);
+    if(tl.x < 0 || tl.x > in_image.cols || br.x < 0 || br.x > in_image.cols ||
+       tl.y < 0 || tl.y > in_image.rows || br.y < 0 || br.y > in_image.rows){
+        return false;
+    }
     out_image.resize(img_ROI.width, img_ROI.height);
     in_image(img_ROI).copyTo(out_image);
     return true;
