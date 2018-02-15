@@ -1,0 +1,16 @@
+<application>
+
+  <name>Green Team object pointing</name>
+
+  <dependencies>
+      <port>/yarplogger</port>
+      <port>/icubSim/cartesianController/left_arm/state:o</port>
+  </dependencies>
+
+  <module>
+      <name>object_pointing</name>
+      <environment>YARP_FORWARD_LOG_ENABLE=1</environment>
+      <node>localhost</node>
+  </module>
+
+</application>
