@@ -203,7 +203,10 @@ bool ObjectRecognizerModule::updateModule()
     // Crop the images around objects and classify the objects
     if (!FLAG_UNIT_TEST){ //
         int numObj = box_pos->size()/2;
-
+        mutex.lock();
+        classifPosMap.clear();
+        mutex.unlock();
+        classifScoreMap.clear();
         for(int i=0; i<numObj; i++){
             tl.x = box_pos->get(i*2).asList()->get(0).asInt();
             tl.y = box_pos->get(i*2).asList()->get(1).asInt();
@@ -260,8 +263,10 @@ bool ObjectRecognizerModule::updateModule()
         int classObject = 0;
         ok = classify(img_crop_mat, max_score, classObject);
         if (!ok) return false;
+        classifScoreMap.clear();
         classifScoreMap[labels[classObject]] = max_score;
         mutex.lock();
+        classifPosMap.clear();
         Vector v; v.push_back(0);
         classifPosMap[labels[classObject]] = v;
         mutex.unlock();

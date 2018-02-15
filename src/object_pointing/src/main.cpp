@@ -17,6 +17,7 @@
 
 #include <yarp/dev/Drivers.h>
 #include <yarp/dev/CartesianControl.h>
+#include <yarp/dev/GazeControl.h>
 #include <yarp/dev/PolyDriver.h>
 
 #include <yarp/os/BufferedPort.h>
@@ -36,32 +37,40 @@ class CtrlModule: public RFModule
 {
     BufferedPort<Bottle> inputObjectPositionPort;
     // port for reading user feedback
-    //BufferedPort<Bottle> outputPort;
+    BufferedPort<Bottle> outputPort;
 
-
-
-    yarp::sig::Vector targetObjectPosition;
-
-    PolyDriver         client;
+    PolyDriver         drvArm, drvGaze;
     ICartesianControl *arm;
+    IGazeControl      *igaze;
 
     Vector xd;
     Vector od;
 
     int startup_context_id;
+    int startup_context_gaze;
 
     double t;
     double t0;
     double t1;
-    double trajectoryTime = 1.0;
+    double trajectoryTime = 5.0;
     int rateThread = 1000; // 1s
     double fingerAddedLength;
 
     bool threadCalled = false;
 
-    int tempTotalPointings = 0;
-
 public:
+
+    // Fixate eyes
+    void fixate(const Vector &x)
+    {
+        // FILL IN THE CODE +++
+        yInfo()<<"Fixating on the 3d point: "<<x[0]<<","<<x[1]<<","<<x[2];
+        //igaze->lookAtFixationPointSync(x);
+        igaze->lookAtFixationPoint(x);
+        yInfo()<<"Waitinf for the end of visual fixation...";
+        // igaze->waitMotionDone();
+        yInfo()<<"Fixation done.";
+    }
 
     void extendIndexFingerLength(double lengthToAdd)
     {
@@ -91,17 +100,23 @@ public:
     void pointIndexFingerToTarget(yarp::sig::Vector position)
     {
         yInfo()<<"Pointing finger to object... ";
-        arm->goToPositionSync(position);
+        //arm->goToPositionSync(position);
+        arm->goToPosition(position);
 
         bool motion_done;
         arm->checkMotionDone(&motion_done);
-        while (!motion_done)
+        double startTime = Time::now();
+        while ((!motion_done) && (Time::now() - startTime < trajectoryTime))
         {
             yInfo()<<"Waiting for motion to finish...";
             Time::delay(1.0);
             arm->checkMotionDone(&motion_done);
         }
 
+//        if (!motion_done)
+//        {
+//            arm->stopControl();
+//        }
         yInfo()<<"done!";
     }
 
@@ -212,9 +227,6 @@ public:
         // in the yz plane centered in [-0.3,-0.1,0.1] with radius=0.1 m
         // and frequency 0.1 Hz
 
-        //double MAX_DIST = - 1.5;
-        //double MIN_DIST = - 0.2;
-
         //xd[0] = std::min((std::rand() * MAX_DIST), MIN_DIST);
          xd[0]=-2.3 + (std::rand()% 2);
          xd[1]=-1.3 + (std::rand()% 10)*0.17; //0.1+0.1*cos(2.0*M_PI*0.1*(t-t0));
@@ -245,6 +257,26 @@ public:
         arm->setLimits(axis,min,MAX_TORSO_PITCH);
     }
 
+    bool configPorts()
+    {
+        // open the input port
+        if (!inputObjectPositionPort.open("/objectPointing/position:i"))
+        {
+            yError()<<"error opening input port for client";
+            return false;
+        }
+
+        // open the output port
+        if (!outputPort.open("/objectPointing/done:o"))
+        {
+            yError()<<"error opening output port for sending object pointing done signal";
+            return false;
+        }
+
+        return true;
+    }
+
+
     virtual bool configure(ResourceFinder &rf)
     {
         // retrieve command line options
@@ -266,49 +298,71 @@ public:
         option.put("device","cartesiancontrollerclient");
         option.put("remote","/icubSim/cartesianController/right_arm");
         option.put("local","/cartesian_client/right_arm");
+        yDebug()<<"cartesian control property OK";
 
+        Property optGaze;
+        optGaze.put("device","gazecontrollerclient");
+        optGaze.put("remote","/iKinGazeCtrl");
+        optGaze.put("local","/tracker/gaze");
+        yInfo()<<"optGaze declared";
+
+        yInfo()<<"Configuring ports...";
         if (!configPorts())
         {
+            yError()<<"Failed to configure ports";
             return false;
         }
 
         // let's give the controller some time to warm up
-        bool ok=false;
-        double t0=Time::now();
-        while ((Time::now()-t0<10.0) && (!ok))
+        if (drvArm.open(option))
         {
-            // this might fail if controller
-            // is not connected to solver yet
-            if (client.open(option))
-            {
-                ok=true;
-                yInfo()<<"Successfully opened Cartesian controller!";
-                //break;
-            }
-            else
-            {
-                Time::delay(1.0);
-            }
+            yInfo()<<"Successfully opened Cartesian controller!";
         }
-
-        if (!ok)
+        else
         {
             yError()<<"Unable to open the Cartesian Controller";
             return false;
         }
 
-        // open the view
-        client.view(arm);
+        if (drvGaze.open(optGaze))
+        {
+            yInfo()<<"Successfully opened Gaze controller!";
+        }
+        else
+        {
+            yInfo()<<"Failed to open Cartesian controller!";
+            return false;
+        }
 
+        yInfo()<<"Opening the view";
+        // open the view
+        drvArm.view(arm);
+        drvGaze.view(igaze);
+
+
+        yInfo()<<"Storing the context";
         // latch the controller context in order to preserve
         // it after closing the module
         // the context contains the dofs status, the tracking mode,
         // the resting positions, the limits and so on.
         arm->storeContext(&startup_context_id);
+        igaze->storeContext(&startup_context_gaze);
+
 
         // set trajectory time
-        arm->setTrajTime(trajectoryTime);
+        yDebug()<<"Setting gaze tracking mode true";
+        igaze->setTrackingMode(true);
+        yDebug()<<"Setting neck and eyes trajectory time";
+        igaze->setNeckTrajTime(0.6);
+        igaze->setEyesTrajTime(0.4);
 
+        yInfo()<<"Setting trajectory time";
+        // set trajectory time
+        arm->setTrajTime(trajectoryTime);
+        yDebug()<<"TrajectoryTime: "<<trajectoryTime;
+        yDebug()<<__LINE__;
+
+        yInfo()<<"Getting new torso dofs";
         // get the torso dofs
         Vector newDof, curDof;
         arm->getDOF(curDof);
@@ -320,14 +374,24 @@ public:
         newDof[1]=0; // roll
         newDof[2]=1;
 
+
+        yInfo()<<"Set new torso dofs";
+        yDebug()<<__LINE__;
         // send the request for dofs reconfiguration
         arm->setDOF(newDof,curDof);
 
+
+        yDebug()<<"Limiting torso pitch...";
+        yDebug()<<__LINE__;
         // impose some restriction on the torso pitch
         limitTorsoPitch();
 
         xd.resize(3);
         od.resize(4);
+
+        fingerAddedLength += 0.1;
+        extendIndexFingerLength(fingerAddedLength);
+        yDebug()<<"Total added finger length: "<<fingerAddedLength;
 
         yInfo()<<"Thread started successfully";
         t=t0=t1=Time::now();
@@ -336,22 +400,10 @@ public:
     }
 
     /****************************************************/
-    bool configPorts()
-    {
-        // open the input port
-        if (!inputObjectPositionPort.open("/objectPointing/position:i"))
-        {
-            yError()<<"error opening input port for client";
-            return false;
-        }
-
-        return true;
-    }
-
-
     bool closePorts()
     {
         inputObjectPositionPort.close();
+        outputPort.close();
         // also close other ports of Abbas
     }
 
@@ -368,7 +420,8 @@ public:
 
         closePorts();
 
-        client.close();
+        drvArm.close();
+        drvGaze.close();
 
         yInfo()<<"done!";
         return true;
@@ -384,6 +437,10 @@ public:
         yInfo()<<"UpdateModule is called!";
         if (!threadCalled)
         {
+            yDebug()<<"Doing the task...";
+            yarp::sig::Vector targetObjectPosition(3);
+
+            yDebug()<<"Reading from the port";
             Bottle* bottle = NULL;
             bottle = inputObjectPositionPort.read(); // blocking read
             if (bottle==NULL)
@@ -393,95 +450,104 @@ public:
             }
             else if (bottle!=NULL)
             {
-                // check that the movement requested has been done and
-                // update the boolean variable "idle"
-                // FILL IN THE CODE (OK?)+++
-                // try to move the arm
-
-                //ipos->checkMotionDone(&idle);
-                // moveArm(bottle);
+                if (bottle->size() != 3)
+                {
+                    yError()<<"Received not 3 coordinates (but something else)";
+                }
+                yInfo()<<"Receiving the bottle. Coordinates OK";
                 targetObjectPosition[0] = bottle->get(0).asDouble();
                 targetObjectPosition[1] = bottle->get(1).asDouble();
                 targetObjectPosition[2] = bottle->get(2).asDouble();
             }
-
-
+            yDebug()<<"Done reading from the port";
 
             yInfo()<<"Pointing operations start!";
             threadCalled = true;
 
-            t=Time::now();
+//            t=Time::now();
             // Generate a new target every (N) milliseconds
             // targetObjectPosition = generateTarget(); // fills GD
 
-            yarp::sig::Vector shoulderPosition = getShoulderPosition();
-            double distanceFromShoulderToObject = getInterPointDistance(shoulderPosition, targetObjectPosition);
-            double armLength = getArmLength();
+//            yarp::sig::Vector shoulderPosition = getShoulderPosition();
+//            double distanceFromShoulderToObject = getInterPointDistance(shoulderPosition, targetObjectPosition);
+//            double armLength = getArmLength();
 
-            // Tells if a 3d position is reachable by the robot's arm
-            bool objectIsInsideReachableSphere = (distanceFromShoulderToObject < armLength);
+//            // Tells if a 3d position is reachable by the robot's arm
+//            bool objectIsInsideReachableSphere = (distanceFromShoulderToObject < armLength);
 
 
-            if (true) //(objectIsInsideReachableSphere)// (true)
-            {
-                yInfo()<<"Point is inside reachable sphere";
-                double lengthToAdd = 0.1;
-                extendIndexFingerLength(lengthToAdd);
+//            if (true) //(objectIsInsideReachableSphere)// (true)
+//            {
+//                yInfo()<<"Point is inside reachable sphere";
+//                fingerAddedLength += 0.1;
+//                extendIndexFingerLength(fingerAddedLength);
+
+                yDebug()<<"Fixating eyes";
+                fixate(targetObjectPosition);
+                yInfo()<<"Pointing";
                 pointIndexFingerToTarget(targetObjectPosition);
-                extendIndexFingerLength(-lengthToAdd);
-            }
-            else
-            {
-                yInfo()<<"Point is outside reachable sphere";
+//                extendIndexFingerLength(-fingerAddedLength);
+//                fingerAddedLength -= fingerAddedLength;
+//                yDebug()<<"Total added finger length: "<<fingerAddedLength;
 
-                // Pose = 6d
-                yarp::sig::Vector closestReachablePose = getClosestReachablePoseToObject(
-                                                                    targetObjectPosition,
-                                                                    shoulderPosition,
-                                                                    armLength);
+                yDebug()<<"Writing in the output port that the action is done";
+                Bottle &message=outputPort.prepare();
+                message.clear(); //important, objects get recycled
+                message.addInt(1); // true
+                outputPort.write();
+                yDebug()<<"Done";
 
-                yarp::sig::Vector position(3);
-                yarp::sig::Vector orientation(3);
-                position[0] = closestReachablePose[0];
-                position[1] = closestReachablePose[1];
-                position[2] = closestReachablePose[2];
-
-                orientation[0] = closestReachablePose[3];
-                orientation[1] = closestReachablePose[4];
-                orientation[2] = closestReachablePose[5];
-
-                arm->goToPoseSync(position, orientation);
-
-                bool motion_done;
-                arm->checkMotionDone(&motion_done);
-                while (!motion_done)
-                {
-                    yInfo()<<"Waiting for motion to finish...";
-                    // some verbosity
-                    //printStatus();
-                    Time::delay(1.0);
-                    arm->checkMotionDone(&motion_done);
-                }
-
-                yInfo()<<"done!";
-            }
-            yInfo()<<"Pointing done!";
-
-            tempTotalPointings++;
-
-            if (tempTotalPointings < 5)
-            {
                 threadCalled = false;
-            }
-            else
-            {
-                close();
-            }
+
+                // threadCalled = false;
+//            }
+//            else
+//            {
+//                yInfo()<<"Point is outside reachable sphere";
+
+//                // Pose = 6d
+//                yarp::sig::Vector closestReachablePose = getClosestReachablePoseToObject(
+//                                                                    targetObjectPosition,
+//                                                                    shoulderPosition,
+//                                                                    armLength);
+
+//                yarp::sig::Vector position(3);
+//                yarp::sig::Vector orientation(3);
+//                position[0] = closestReachablePose[0];
+//                position[1] = closestReachablePose[1];
+//                position[2] = closestReachablePose[2];
+
+//                orientation[0] = closestReachablePose[3];
+//                orientation[1] = closestReachablePose[4];
+//                orientation[2] = closestReachablePose[5];
+
+//                arm->goToPoseSync(position, orientation);
+
+//                bool motion_done;
+//                arm->checkMotionDone(&motion_done);
+//                while (!motion_done)
+//                {
+//                    yInfo()<<"Waiting for motion to finish...";
+//                    // some verbosity
+//                    //printStatus();
+//                    Time::delay(1.0);
+//                    arm->checkMotionDone(&motion_done);
+//                }
+
+//                yInfo()<<"done!";
+//            }
+            yInfo()<<"Pointing done!";
         }
 
         return true;
     }
 
+
+    bool interrupt()
+    {
+        inputObjectPositionPort.interrupt();
+        return true;
+    }
 
 };
 

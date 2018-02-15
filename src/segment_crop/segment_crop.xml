@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<?xml-stylesheet type="text/xsl" href="yarpmanifest.xsl"?>
+
+<module>
+  <name>segment_crop</name>
+  <doxygen-group></doxygen-group>
+  <description> Extracts the brightest blobs in a sequence of disparity images</description>
+  <copypolicy>Released under the terms of the GNU GPL v2.0</copypolicy>
+  <version>1.0</version>
+
+  <description-long>
+    This module takes as input a disparity map and two RGB pictures and outputs the crop images of 2 brightest blobs 
+    and their respective Cartesian positions.
+
+</description-long>
+
+  <arguments>
+    <param default="segment_crop" desc="select the current context.">context</param>
+    <param default="config.ini" desc="configuration file name.">from</param>
+  </arguments>
+
+  <authors>
+    <author email="ugo.vollhardt@gmail.com"> Ugo Vollhardt </author>
+    <author > Fabrizio Bottarel</author>
+  </authors>
+
+  <data>
+    <input>
+      <type>yarp::sig::Image</type>
+      <port carrier="udp">/segment_crop/disparity:i</port>
+      <description>
+        Gets the disparity input stream from the icub.
+      </description>
+    </input>
+    <input>
+      <type>yarp::sig::Image</type>
+      <port carrier="udp">/segment_crop/image:i</port>
+      <description>
+        Gets the camera input stream from the icub.
+      </description>
+    </input>
+    <output>
+      <type>yarp::sig::Bottle</type>
+      <port carrier="udp">/segment_crop/datas:o</port>
+      <description>
+        Streams out the cropped images of the two brigthest blobs and their respective positions.
+      </description>
+    </output>
+    <!-- <output>
+      <type>yarp::sig::Image</type>
+      <port carrier="udp">/segment_crop/image:o</port>
+      <description>
+        Streams out the image of selected blob.
+      </description>
+    </output>
+    <output>
+      <type>yarp::sig::Image</type>
+      <port carrier="udp">/closest-blob/crop:o</port>
+      <description>
+        Streams out the cropped image of selected blob.
+      </description>
+    </output>
+    <output>
+      <type>yarp::sig::Bottle</type>
+      <port carrier="udp">/closest-blob/target:o</port>
+      <description>
+        Coordinates of the TL and BR points of the ROI around the selected blob
+      </description>
+    </output> -->
+  </data>
+
+  <services>
+    <server>
+      <type>closestBlob_IDL</type>
+      <idl>segment_crop.thrift</idl>
+      <port>/segment_crop/rpc</port>
+      <description>service port</description>
+    </server>
+  </services>
+
+</module>
