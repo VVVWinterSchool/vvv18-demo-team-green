@@ -31,6 +31,11 @@
         <from>/SFM/disp:o</from>
         <to>/segment_crop/disparity:i</to>
         <protocol>tcp</protocol>
+    </connection>	
+    <connection>
+	<from>/icub/camcalib/left/out</from>
+	<to>/segment_crop/RGBimage:i</to>
+	<protocol>tcp</protocol>
     </connection>
     <connection>
         <from>/segment_crop/debugRGB:o</from>

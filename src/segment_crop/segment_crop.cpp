@@ -59,7 +59,7 @@ bool CustomProcessor::open()
 {
     //this->useCallback();
     this->BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelMono> >::open( "/" + moduleName + "/disparity:i" );
-    //inRGBPort.open("/" + moduleName + "/RGBimage:i");
+    inRGBPort.open("/" + moduleName + "/RGBimage:i");
     outStuffPort.open("/"+ moduleName + "/crops:o");
     outDebugPortRGB.open("/"+ moduleName + "/debugRGB:o");
     detection_timeout.open("/" + moduleName + "/valid_detection:o");
@@ -70,7 +70,7 @@ void CustomProcessor::close()
     outDebugPortRGB.close();
     outStuffPort.close();
     detection_timeout.close();
-    //inRGBPort.close();
+    inRGBPort.close();
     this->BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelMono> >::close();
 }
 
@@ -82,13 +82,14 @@ void CustomProcessor::interrupt()
 void CustomProcessor::onRead(yarp::sig::ImageOf<yarp::sig::PixelMono> &dispImage )
 {
     yarp::sig::ImageOf<yarp::sig::PixelRgb> &outDebugRGB = outDebugPortRGB.prepare();
-    //yarp::sig::ImageOf<yarp::sig::PixelRgb> *inRGB = inRGBPort.read();
+    yarp::sig::ImageOf<yarp::sig::PixelRgb> *inRGB = inRGBPort.read();
     yarp::os::Bottle &outBottle = outStuffPort.prepare();
 
     outDebugRGB.resize(dispImage.width(),dispImage.height());
     outDebugRGB.zero();
 
     cv::Mat disp = cv::cvarrToMat((IplImage*)dispImage.getIplImage());
+    cv::Mat rgb_with_bb = cv::cvarrToMat((IplImage*)inRGB->getIplImage());
     cv::Mat processed_disp = disp.clone();
 
     // blur the disparity map to soften edges
@@ -114,6 +115,7 @@ void CustomProcessor::onRead(yarp::sig::ImageOf<yarp::sig::PixelMono> &dispImage
     {
         cv::Rect b_box = cv::boundingRect(contours[i]);
         cv::rectangle(processed_disp, b_box, cv::Scalar(0, 255, 255), 2);
+        cv::rectangle(rgb_with_bb, b_box, cv::Scalar(0, 255, 255), 2);
     }
 
     //  init structures to contain bounding boxes
@@ -175,12 +177,12 @@ void CustomProcessor::onRead(yarp::sig::ImageOf<yarp::sig::PixelMono> &dispImage
             listObj1_Rect.addInt(bounding_box_1.tl().x);
             listObj1_Rect.addInt(bounding_box_1.tl().y);
             listObj1_Rect.addInt(bounding_box_1.br().x);
-            listObj1_Rect.addInt(bounding_box_1.br().x);
+            listObj1_Rect.addInt(bounding_box_1.br().y);
 
             listObj2_Rect.addInt(bounding_box_2.tl().x);
             listObj2_Rect.addInt(bounding_box_2.tl().y);
             listObj2_Rect.addInt(bounding_box_2.br().x);
-            listObj2_Rect.addInt(bounding_box_2.br().x);
+            listObj2_Rect.addInt(bounding_box_2.br().y);
 
             listObj1_pos.addDouble(object_1[0]);
             listObj1_pos.addDouble(object_1[1]);
@@ -223,7 +225,12 @@ void CustomProcessor::onRead(yarp::sig::ImageOf<yarp::sig::PixelMono> &dispImage
 
     //  prepare debug disp map and stream it
     cv::resize(processed_disp,processed_disp,cv::Size(outDebugRGB.width(),outDebugRGB.height()));
-    IplImage out = processed_disp;
+    ///IplImage out = processed_disp;
+
+    //cvCopy(&out,(IplImage*) outDebugRGB.getIplImage());
+    //outDebugPortRGB.write();
+
+    IplImage out = rgb_with_bb;
 
     cvCopy(&out,(IplImage*) outDebugRGB.getIplImage());
     outDebugPortRGB.write();
