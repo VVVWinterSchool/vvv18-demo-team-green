@@ -13,12 +13,6 @@ bool Module::configure(yarp::os::ResourceFinder &rf)
     attach(rpcPort);
     inDispPort->useCallback();
     inDispPort->open();
-
-    if (inDispPort->queryClient.getOutputCount()==0)
-    {
-
-    }
-
     return true;
 }
 
