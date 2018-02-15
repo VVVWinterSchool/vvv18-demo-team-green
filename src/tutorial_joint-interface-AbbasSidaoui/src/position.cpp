@@ -542,7 +542,7 @@ public:
         else if (cmd.get(0).asString()=="Shy")
         {
             home();
-            Time::delay(10);
+            Time::delay(7);
             Shy();
             reply.addString("Shy_done");
         }
@@ -559,7 +559,7 @@ public:
         else if (cmd.get(0).asString()=="Happy")
         {
             home();
-            Time::delay(10);
+            Time::delay(7);
             Happy();
             reply.addString("Happy_done");
         }
