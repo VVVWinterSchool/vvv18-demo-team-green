@@ -35,7 +35,7 @@
 
   <module>
       <name>iKinCartesianSolver</name>
-      <parameters>--context simCartesianControl --part left_arm</parameters>
+      <parameters>--context simCartesianControl --part right_arm</parameters>
       <dependencies>
           <port timeout="20">/yarplogger</port>
           <port timeout="20">/icubSim/torso/state:o</port>

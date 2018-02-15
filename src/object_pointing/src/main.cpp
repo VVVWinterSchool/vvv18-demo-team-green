@@ -38,8 +38,6 @@ class CtrlModule: public RFModule
     // port for reading user feedback
     //BufferedPort<Bottle> outputPort;
 
-
-
     yarp::sig::Vector targetObjectPosition;
 
     PolyDriver         client;
@@ -58,8 +56,6 @@ class CtrlModule: public RFModule
     double fingerAddedLength;
 
     bool threadCalled = false;
-
-    int tempTotalPointings = 0;
 
 public:
 
@@ -245,6 +241,19 @@ public:
         arm->setLimits(axis,min,MAX_TORSO_PITCH);
     }
 
+    bool configPorts()
+    {
+        // open the input port
+        if (!inputObjectPositionPort.open("/objectPointing/position:i"))
+        {
+            yError()<<"error opening input port for client";
+            return false;
+        }
+
+        return true;
+    }
+
+
     virtual bool configure(ResourceFinder &rf)
     {
         // retrieve command line options
@@ -264,11 +273,13 @@ public:
         //
         Property option;
         option.put("device","cartesiancontrollerclient");
-        option.put("remote","/icubSim/cartesianController/right_arm");
-        option.put("local","/cartesian_client/right_arm");
+        option.put("remote","/icubSim/cartesianController/left_arm");
+        option.put("local","/cartesian_client/left_arm");
 
+        yInfo()<<"Configuring ports...";
         if (!configPorts())
         {
+            yError()<<"Failed to configure ports";
             return false;
         }
 
@@ -336,19 +347,6 @@ public:
     }
 
     /****************************************************/
-    bool configPorts()
-    {
-        // open the input port
-        if (!inputObjectPositionPort.open("/objectPointing/position:i"))
-        {
-            yError()<<"error opening input port for client";
-            return false;
-        }
-
-        return true;
-    }
-
-
     bool closePorts()
     {
         inputObjectPositionPort.close();
@@ -393,19 +391,10 @@ public:
             }
             else if (bottle!=NULL)
             {
-                // check that the movement requested has been done and
-                // update the boolean variable "idle"
-                // FILL IN THE CODE (OK?)+++
-                // try to move the arm
-
-                //ipos->checkMotionDone(&idle);
-                // moveArm(bottle);
                 targetObjectPosition[0] = bottle->get(0).asDouble();
                 targetObjectPosition[1] = bottle->get(1).asDouble();
                 targetObjectPosition[2] = bottle->get(2).asDouble();
             }
-
-
 
             yInfo()<<"Pointing operations start!";
             threadCalled = true;
@@ -422,61 +411,50 @@ public:
             bool objectIsInsideReachableSphere = (distanceFromShoulderToObject < armLength);
 
 
-            if (true) //(objectIsInsideReachableSphere)// (true)
-            {
+//            if (true) //(objectIsInsideReachableSphere)// (true)
+//            {
                 yInfo()<<"Point is inside reachable sphere";
                 double lengthToAdd = 0.1;
                 extendIndexFingerLength(lengthToAdd);
                 pointIndexFingerToTarget(targetObjectPosition);
                 extendIndexFingerLength(-lengthToAdd);
-            }
-            else
-            {
-                yInfo()<<"Point is outside reachable sphere";
+//            }
+//            else
+//            {
+//                yInfo()<<"Point is outside reachable sphere";
 
-                // Pose = 6d
-                yarp::sig::Vector closestReachablePose = getClosestReachablePoseToObject(
-                                                                    targetObjectPosition,
-                                                                    shoulderPosition,
-                                                                    armLength);
+//                // Pose = 6d
+//                yarp::sig::Vector closestReachablePose = getClosestReachablePoseToObject(
+//                                                                    targetObjectPosition,
+//                                                                    shoulderPosition,
+//                                                                    armLength);
 
-                yarp::sig::Vector position(3);
-                yarp::sig::Vector orientation(3);
-                position[0] = closestReachablePose[0];
-                position[1] = closestReachablePose[1];
-                position[2] = closestReachablePose[2];
+//                yarp::sig::Vector position(3);
+//                yarp::sig::Vector orientation(3);
+//                position[0] = closestReachablePose[0];
+//                position[1] = closestReachablePose[1];
+//                position[2] = closestReachablePose[2];
 
-                orientation[0] = closestReachablePose[3];
-                orientation[1] = closestReachablePose[4];
-                orientation[2] = closestReachablePose[5];
+//                orientation[0] = closestReachablePose[3];
+//                orientation[1] = closestReachablePose[4];
+//                orientation[2] = closestReachablePose[5];
 
-                arm->goToPoseSync(position, orientation);
+//                arm->goToPoseSync(position, orientation);
 
-                bool motion_done;
-                arm->checkMotionDone(&motion_done);
-                while (!motion_done)
-                {
-                    yInfo()<<"Waiting for motion to finish...";
-                    // some verbosity
-                    //printStatus();
-                    Time::delay(1.0);
-                    arm->checkMotionDone(&motion_done);
-                }
+//                bool motion_done;
+//                arm->checkMotionDone(&motion_done);
+//                while (!motion_done)
+//                {
+//                    yInfo()<<"Waiting for motion to finish...";
+//                    // some verbosity
+//                    //printStatus();
+//                    Time::delay(1.0);
+//                    arm->checkMotionDone(&motion_done);
+//                }
 
-                yInfo()<<"done!";
-            }
+//                yInfo()<<"done!";
+//            }
             yInfo()<<"Pointing done!";
-
-            tempTotalPointings++;
-
-            if (tempTotalPointings < 5)
-            {
-                threadCalled = false;
-            }
-            else
-            {
-                close();
-            }
         }
 
         return true;
