@@ -101,14 +101,14 @@ protected:
        f_target=f_min+0.1*f_range;
    return f_target;
     }
-  void getpose(){
+/*  void getpose(){
       ileft_arm->getPose(l_pos,l_o);
       iright_arm->getPose(r_pos,r_o);
  yInfo()<<"l_pose"<<l_pos[0];
  yInfo()<<"r_pose"<<r_pos[0];
 
 
-  }
+  }*/
   void HighFive(){
         JointConf();
        //position move
@@ -333,11 +333,11 @@ protected:
         ipos_right->positionMove(pinky,10.8);
 
         ipos_head->positionMove(neck_pitch,0.0);
-                ipos_head->positionMove(neck_roll,0.0);
-                ipos_head->positionMove(neck_yaw,0.0);
-                ipos_torso->positionMove(torso_pitch,0.0);
-                ipos_torso->positionMove(torso_roll,0.0);
-                ipos_torso->positionMove(torso_yaw,0.0);
+        ipos_head->positionMove(neck_roll,0.0);
+        ipos_head->positionMove(neck_yaw,0.0);
+        ipos_torso->positionMove(torso_pitch,0.0);
+        ipos_torso->positionMove(torso_roll,0.0);
+        ipos_torso->positionMove(torso_yaw,0.0);
 
 
     }
@@ -420,7 +420,7 @@ public:
         optJoint5.put("remote","/"+robot+"/torso");
         optJoint5.put("local","/position/torso");
 
-        Property optc_l;
+/*        Property optc_l;
         optc_l.put("device","cartesiancontrollerclient");
         optc_l.put("remote","/"+robot+"/cartesianController/left_arm");
         optc_l.put("local","/cartesian_client/left_arm");
@@ -434,7 +434,7 @@ public:
         optc_t.put("device","cartesiancontrollerclient");
         optc_t.put("remote","/"+robot+"/cartesianController/torso");
         optc_t.put("local","/cartesian_client/torso");
-
+*/
 
         if (!leftArm.open(optJoint2))
         {
@@ -456,7 +456,7 @@ public:
             yError()<<"Unable to connect to /torso";
             return false;
         }
-        if (!c_r.open(optc_r))
+ /*       if (!c_r.open(optc_r))
         {
             yError()<<"Unable to connect to /c_r";
             return false;
@@ -467,7 +467,7 @@ public:
             return false;
         }
 
-
+*/
         // open views
         bool ok=true;
 
@@ -481,12 +481,12 @@ public:
 
         ok=ok && leftArm.view(imod_left);
         ok=ok && leftArm.view(ipos_left);
-        ok=ok && c_l.view(ileft_arm);
+ //       ok=ok && c_l.view(ileft_arm);
 
 
         ok=ok && rightArm.view(imod_right);
         ok=ok && rightArm.view(ipos_right);
-        ok=ok && c_r.view(iright_arm);
+ //       ok=ok && c_r.view(iright_arm);
 
         ok=ok && head.view(imod_head);
         ok=ok && head.view(ipos_head);
@@ -512,9 +512,9 @@ public:
 
 
 
-         yInfo()<<"getting pose";
+  /*       yInfo()<<"getting pose";
         getpose();
-         yInfo()<<"finished configuration";
+         yInfo()<<"finished configuration";*/
           return true;
     }
 
@@ -526,8 +526,8 @@ public:
         rightArm.close();
         head.close();
         torso.close();
-        c_l.close();
-        c_r.close();
+//        c_l.close();
+//        c_r.close();
 
         return true;
     }
