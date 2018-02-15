@@ -42,7 +42,13 @@ Structure of the repository:
 ```
 
 ## State diagram 
-<img src="/doc/img/Diagramme_state.png" alt="State diagram of the application" width="50%" style="display: block;
+<img src="/doc/img/StateDiagram.png" alt="State diagram of the application" width="50%" style="display: block;
     margin-left: auto;
     margin-right: auto;">
+    
 
+
+## State diagram 
+<img src="/doc/img/BlockDiagram.png" alt="Bloxk diagram of the application" width="50%" style="display: block;
+    margin-left: auto;
+    margin-right: auto;">
