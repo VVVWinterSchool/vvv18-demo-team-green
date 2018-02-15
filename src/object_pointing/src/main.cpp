@@ -38,8 +38,6 @@ class CtrlModule: public RFModule
     // port for reading user feedback
     //BufferedPort<Bottle> outputPort;
 
-    yarp::sig::Vector targetObjectPosition;
-
     PolyDriver         client;
     ICartesianControl *arm;
 
@@ -51,7 +49,7 @@ class CtrlModule: public RFModule
     double t;
     double t0;
     double t1;
-    double trajectoryTime = 1.0;
+    double trajectoryTime = 5.0;
     int rateThread = 1000; // 1s
     double fingerAddedLength;
 
@@ -91,13 +89,18 @@ public:
 
         bool motion_done;
         arm->checkMotionDone(&motion_done);
-        while (!motion_done)
+        double startTime = Time::now();
+        while ((!motion_done) && (Time::now() - startTime < trajectoryTime))
         {
             yInfo()<<"Waiting for motion to finish...";
             Time::delay(1.0);
             arm->checkMotionDone(&motion_done);
         }
 
+        if (!motion_done)
+        {
+            arm->stopControl();
+        }
         yInfo()<<"done!";
     }
 
@@ -273,8 +276,8 @@ public:
         //
         Property option;
         option.put("device","cartesiancontrollerclient");
-        option.put("remote","/icubSim/cartesianController/left_arm");
-        option.put("local","/cartesian_client/left_arm");
+        option.put("remote","/icubSim/cartesianController/right_arm");
+        option.put("local","/cartesian_client/right_arm");
 
         yInfo()<<"Configuring ports...";
         if (!configPorts())
@@ -284,42 +287,36 @@ public:
         }
 
         // let's give the controller some time to warm up
-        bool ok=false;
-        double t0=Time::now();
-        while ((Time::now()-t0<10.0) && (!ok))
+        if (client.open(option))
         {
-            // this might fail if controller
-            // is not connected to solver yet
-            if (client.open(option))
-            {
-                ok=true;
-                yInfo()<<"Successfully opened Cartesian controller!";
-                //break;
-            }
-            else
-            {
-                Time::delay(1.0);
-            }
+            yInfo()<<"Successfully opened Cartesian controller!";
         }
-
-        if (!ok)
+        else
         {
             yError()<<"Unable to open the Cartesian Controller";
             return false;
         }
 
+        yInfo()<<"Opening the view";
         // open the view
         client.view(arm);
 
+
+        yInfo()<<"Storing the context";
         // latch the controller context in order to preserve
         // it after closing the module
         // the context contains the dofs status, the tracking mode,
         // the resting positions, the limits and so on.
         arm->storeContext(&startup_context_id);
 
+
+        yInfo()<<"Setting trajectory time";
         // set trajectory time
         arm->setTrajTime(trajectoryTime);
+        yDebug()<<"TrajectoryTime: "<<trajectoryTime;
+        yDebug()<<__LINE__;
 
+        yInfo()<<"Getting new torso dofs";
         // get the torso dofs
         Vector newDof, curDof;
         arm->getDOF(curDof);
@@ -331,9 +328,15 @@ public:
         newDof[1]=0; // roll
         newDof[2]=1;
 
+
+        yInfo()<<"Set new torso dofs";
+        yDebug()<<__LINE__;
         // send the request for dofs reconfiguration
         arm->setDOF(newDof,curDof);
 
+
+        yDebug()<<"Limiting torso pitch...";
+        yDebug()<<__LINE__;
         // impose some restriction on the torso pitch
         limitTorsoPitch();
 
@@ -382,6 +385,10 @@ public:
         yInfo()<<"UpdateModule is called!";
         if (!threadCalled)
         {
+            yDebug()<<"Doing the task...";
+            yarp::sig::Vector targetObjectPosition(3);
+
+            yDebug()<<"Reading from the port";
             Bottle* bottle = NULL;
             bottle = inputObjectPositionPort.read(); // blocking read
             if (bottle==NULL)
@@ -391,33 +398,46 @@ public:
             }
             else if (bottle!=NULL)
             {
+                if (bottle->size() != 3)
+                {
+                    yError()<<"Received not 3 coordinates (but something else)";
+                }
+                yInfo()<<"Receiving the bottle. Coordinates OK";
                 targetObjectPosition[0] = bottle->get(0).asDouble();
                 targetObjectPosition[1] = bottle->get(1).asDouble();
                 targetObjectPosition[2] = bottle->get(2).asDouble();
             }
+            yDebug()<<"Done reading from the port";
 
             yInfo()<<"Pointing operations start!";
             threadCalled = true;
 
-            t=Time::now();
+//            t=Time::now();
             // Generate a new target every (N) milliseconds
             // targetObjectPosition = generateTarget(); // fills GD
 
-            yarp::sig::Vector shoulderPosition = getShoulderPosition();
-            double distanceFromShoulderToObject = getInterPointDistance(shoulderPosition, targetObjectPosition);
-            double armLength = getArmLength();
+//            yarp::sig::Vector shoulderPosition = getShoulderPosition();
+//            double distanceFromShoulderToObject = getInterPointDistance(shoulderPosition, targetObjectPosition);
+//            double armLength = getArmLength();
 
-            // Tells if a 3d position is reachable by the robot's arm
-            bool objectIsInsideReachableSphere = (distanceFromShoulderToObject < armLength);
+//            // Tells if a 3d position is reachable by the robot's arm
+//            bool objectIsInsideReachableSphere = (distanceFromShoulderToObject < armLength);
 
 
 //            if (true) //(objectIsInsideReachableSphere)// (true)
 //            {
-                yInfo()<<"Point is inside reachable sphere";
-                double lengthToAdd = 0.1;
-                extendIndexFingerLength(lengthToAdd);
+//                yInfo()<<"Point is inside reachable sphere";
+                fingerAddedLength += 0.1;
+                extendIndexFingerLength(fingerAddedLength);
+                yInfo()<<"Pointing";
                 pointIndexFingerToTarget(targetObjectPosition);
-                extendIndexFingerLength(-lengthToAdd);
+                extendIndexFingerLength(-fingerAddedLength);
+                fingerAddedLength -= fingerAddedLength;
+                yDebug()<<"Total added finger length: "<<fingerAddedLength;
+
+                threadCalled = false;
+
+                // threadCalled = false;
 //            }
 //            else
 //            {
@@ -460,6 +480,12 @@ public:
         return true;
     }
 
+
+    bool interrupt()
+    {
+        inputObjectPositionPort.interrupt();
+        return true;
+    }
 
 };
 
