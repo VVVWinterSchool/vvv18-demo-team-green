@@ -18,13 +18,6 @@
   </dependencies>
 
     <!-- Modules -->
-
-
-    <module>
-        <name>objectRecognizer</name>
-        <parameters>--from objectRecognizer.ini</parameters>
-        <node>localhost</node>
-    </module>
     
         <module>
         <name>machine</name>
@@ -35,17 +28,7 @@
       <name>object_pointing</name>
       <environment>YARP_FORWARD_LOG_ENABLE=1</environment>
       <node>localhost</node>
-      
-      
- <!--   <module>
-        <name>SFM</name>
-        <node>localhost</node>
-    </module>     -->	
-    
-    <module>
-        <name>segment_crop</name>
-        <node>localhost</node>
-     </module>
+     
      
        <module>
       <name>tutorial_joint-interface-position</name>
@@ -70,22 +53,28 @@
 
     <!-- Connections -->
 
-    <connection>
-        <from>/grabber</from>
-        <to>/objectRecognizer/img:i</to>
-        <protocol>tcp</protocol>
-    </connection>
-
-    <connection>
-        <from>/objectRecognizer/view:o</from>
-        <to>/recview</to>
-        <protocol>tcp</protocol>
-</connection>
-
  <connection>
       <from>/wholeBodyDynamics/right_arm/cartesianEndEffectorWrench:o</from>
       <to>/CheckClassification/rigthArmForces:i</to>
       <protocol>udp</protocol>
+  </connection>
+  
+   <connection>
+      <from>/MachineModule/rpc:o</from>
+      <to>/MachineModule/rpc:i</to>
+      <protocol>tcp</protocol>
+  </connection>
+  
+     <connection>
+      <from>/objectPointing/position:o </from>
+      <to>/objectPointing/position:i</to>
+      <protocol>tcp</protocol>
+  </connection>
+  
+       <connection>
+      <from>/objectPointing/done:o </from>
+      <to>/high_five_ready:i</to>
+      <protocol>tcp</protocol>
   </connection>
   
   	<connection>
@@ -123,31 +112,6 @@
 		<to>/checkClassification/flag:i </to>
 		<protocol>tcp</protocol>
 </connection>
-
-<connection>
-        <from>/SFM/disp:o</from>
-        <to>/segment_crop/disparity:i</to>
-        <protocol>tcp</protocol>
-    </connection>	
-    <connection>
-	<from>/icub/camcalib/left/out</from>
-	<to>/segment_crop/RGBimage:i</to>
-	<protocol>tcp</protocol>
-    </connection>
-    <connection>
-        <from>/segment_crop/debugRGB:o</from>
-        <to>/processed_disp</to>
-        <protocol>tcp</protocol>
-    </connection>
-    <connection>
-        <from>/SFM/disp:o</from>
-        <to>/disp_map</to>
-        <protocol>tcp</protocol>
-    </connection>
-    <connection>
-        <from>/segment_crop/rpcSFM</from>
-        <to>/SFM/rpc</to>
-        <protocol>tcp</protocol>
-</connection>
-
+	
+   
 </application>
