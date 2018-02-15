@@ -85,7 +85,8 @@ public:
     void pointIndexFingerToTarget(yarp::sig::Vector position)
     {
         yInfo()<<"Pointing finger to object... ";
-        arm->goToPositionSync(position);
+        //arm->goToPositionSync(position);
+        arm->goToPosition(position);
 
         bool motion_done;
         arm->checkMotionDone(&motion_done);
@@ -97,10 +98,10 @@ public:
             arm->checkMotionDone(&motion_done);
         }
 
-        if (!motion_done)
-        {
-            arm->stopControl();
-        }
+//        if (!motion_done)
+//        {
+//            arm->stopControl();
+//        }
         yInfo()<<"done!";
     }
 
@@ -343,6 +344,10 @@ public:
         xd.resize(3);
         od.resize(4);
 
+        fingerAddedLength += 0.1;
+        extendIndexFingerLength(fingerAddedLength);
+        yDebug()<<"Total added finger length: "<<fingerAddedLength;
+
         yInfo()<<"Thread started successfully";
         t=t0=t1=Time::now();
 
@@ -427,13 +432,13 @@ public:
 //            if (true) //(objectIsInsideReachableSphere)// (true)
 //            {
 //                yInfo()<<"Point is inside reachable sphere";
-                fingerAddedLength += 0.1;
-                extendIndexFingerLength(fingerAddedLength);
+//                fingerAddedLength += 0.1;
+//                extendIndexFingerLength(fingerAddedLength);
                 yInfo()<<"Pointing";
                 pointIndexFingerToTarget(targetObjectPosition);
-                extendIndexFingerLength(-fingerAddedLength);
-                fingerAddedLength -= fingerAddedLength;
-                yDebug()<<"Total added finger length: "<<fingerAddedLength;
+//                extendIndexFingerLength(-fingerAddedLength);
+//                fingerAddedLength -= fingerAddedLength;
+//                yDebug()<<"Total added finger length: "<<fingerAddedLength;
 
                 threadCalled = false;
 
