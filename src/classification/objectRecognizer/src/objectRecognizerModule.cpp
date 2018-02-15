@@ -212,6 +212,7 @@ bool ObjectRecognizerModule::updateModule()
             tl.y = box_pos->get(i*2).asList()->get(1).asInt();
             br.x = box_pos->get(i*2).asList()->get(2).asInt();
             br.y = box_pos->get(i*2).asList()->get(3).asInt();
+            cout << "(" << tl.x << "," << tl.y << "," << br.x << "," << br.y << ")";
             if (!cropImage(img_mat, img_crop_mat, tl, br)) return true;
             float max_score = 0;
             int classObject = 0;
