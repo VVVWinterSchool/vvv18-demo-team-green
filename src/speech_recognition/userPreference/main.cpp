@@ -42,13 +42,13 @@ public:
     {
 
         Bottle *input = text_from_speech.read();
-        std::string str = input->toString().c_str();
         if (input != NULL)
         {
+            std::string str = input->get(0).asString();
             if(str.compare("")!=0 )
             {
                 yInfo()<<"input from STT :"<<str;
-                //isPrefence(str);
+                isPreference(str);
             }
             else
             {
@@ -58,6 +58,7 @@ public:
         else
         {
            yInfo()<<"input from STT : is NULL";
+           return false;
         }
         return true;
     }
@@ -91,7 +92,7 @@ public:
 
     /* Check if word in inside the list and send */
 
-    bool isPrefence(std::string str)
+    bool isPreference(std::string str)
     {
         //@todo : do the check
 
@@ -99,7 +100,30 @@ public:
         Bottle response;
         cmd.addString(str);
 
-        label_rpc_out.write(cmd,response);
+        for(int i=1;i<=nbTRial;i++)
+        {
+            if(label_rpc_out.write(cmd,response) == true)
+            //label_rpc_out.write(cmd,response);
+            {
+                string rps = response.get(0).asString();
+                yInfo()<<"rpc answer :"<<rps;
+                i=nbTRial; //get out of the condition
+            }
+            else
+            {
+                yInfo()<<"Fail to call : trial "<<i;
+                //yarp::os::Time::delay(2);
+
+                if(i==nbTRial)
+                {
+                    yInfo()<<"The classifier did not answered";
+                    // @todo trigger event to controller
+                }
+            }
+
+        }
+        return true;
+
 
         //label_rpc_out.(cmd,response);
         //readytoSend = false;
@@ -139,12 +163,12 @@ public:
         if (rf.check("rpc_classifier_server"))
             classifier_rpc_name=rf.find("rpc_classifier_server").asString();
 
-        // @Todo : Strore here the alowed label from the file
-        if(!readJsonFile())
-        {
-            yError()<<"Unable to open JSONfile : "<< name_control_rpc_in;
-            return false;
-        }
+//        // @Todo : Strore here the alowed label from the file
+//        if(!readJsonFile())
+//        {
+//            yError()<<"Unable to open JSONfile : "<< name_control_rpc_in;
+//            return false;
+//        }
 
         return true;
     }
@@ -157,7 +181,9 @@ public:
         yInfo()<<"Interrupting your module, for port cleanup";
 
         control_rpc_in.interrupt();
+        yInfo()<<"1";
         label_rpc_out.interrupt();
+        yInfo()<<"2";
         text_from_speech.interrupt();
         return true;
     }
@@ -179,11 +205,11 @@ public:
 
 private:
 
-    bool readJsonFile()
-    {
-        // @Todo
-        return true;
-    }
+//    bool readJsonFile()
+//    {
+//        // @Todo
+//        return true;
+//    }
 
 };
 
