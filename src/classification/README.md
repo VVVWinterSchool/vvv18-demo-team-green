@@ -27,7 +27,7 @@ In order to run the module separately from the other modules, here is the proced
 <ol>
     <li>Build and install the module</li>
     <li>Run the yarpserver, yarpmanager and yarpserver --run /lh</li>
-    <li>Check that the flag FLAG_UNIT_TEST to true (to test with the webcam)</li>
+    <li>Check that the flag FLAG_UNIT_TEST is set to true (to test with the webcam)</li>
     <li>Run and connect everything in the yarpmanager</b></li>
     <li>Enjoy !! </li>
 </ol>

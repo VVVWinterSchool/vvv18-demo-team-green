@@ -145,20 +145,27 @@ bool ObjectRecognizerModule::respond(const Bottle &command, Bottle &reply)
     string objClass_user = command.get(0).asString();
     string response = "";
 
-    mutex.lock();
+    int countClass = 0;
+    int countNoObj = 0;
+    for (int i=0; i<5; i++){
+        mutex.lock();
+        countClass = classifPosMap.find(objClass_user) != classifPosMap.end() ? countClass+1 : countClass;
+        countNoObj = noObject ? countNoObj+1 : countNoObj;
+        mutex.unlock();
+    }
 
     // if objects are in the field of view and that the user class is detected among them
-    if (!noObject && classifPosMap.find(objClass_user) != classifPosMap.end()){
+    if (countNoObj!=5 && countClass>0){
         response = "label_ok";
-
+        mutex.lock();
         Vector& pos = positionOutport.prepare();
         pos = classifPosMap[objClass_user];
         positionOutport.write();
+        mutex.unlock();
     }
     else{
         response = "label_invalid";
     }
-    mutex.unlock();
 
     reply.addString(response);
 
@@ -175,13 +182,12 @@ bool ObjectRecognizerModule::updateModule()
     Bottle* box_pos = segmentationInport.read(false);
 
     if (!FLAG_UNIT_TEST){ // we get the bounded boxes from segmentation module
+        mutex.lock();
         if (box_pos == NULL){
-            mutex.lock();
             noObject = true;
             mutex.unlock();
             return true;
         }
-        mutex.lock();
         noObject = false;
         mutex.unlock();
     }
@@ -205,7 +211,6 @@ bool ObjectRecognizerModule::updateModule()
         int numObj = box_pos->size()/2;
         mutex.lock();
         classifPosMap.clear();
-        mutex.unlock();
         classifScoreMap.clear();
         for(int i=0; i<numObj; i++){
             tl.x = box_pos->get(i*2).asList()->get(0).asInt();
@@ -213,18 +218,21 @@ bool ObjectRecognizerModule::updateModule()
             br.x = box_pos->get(i*2).asList()->get(2).asInt();
             br.y = box_pos->get(i*2).asList()->get(3).asInt();
             cout << "(" << tl.x << "," << tl.y << "," << br.x << "," << br.y << ")";
-            if (!cropImage(img_mat, img_crop_mat, tl, br)) return true;
+            if (!cropImage(img_mat, img_crop_mat, tl, br)){
+                mutex.unlock();
+                return true;
+            }
             float max_score = 0;
             int classObject = 0;
             ok = classify(img_crop_mat, max_score, classObject);
-            if (!ok) return false;
+            if (!ok){
+                mutex.unlock();
+                return false;}
             Vector p;
             p.push_back(box_pos->get(i*2+1).asList()->get(0).asDouble());
             p.push_back(box_pos->get(i*2+1).asList()->get(1).asDouble());
             p.push_back(box_pos->get(i*2+1).asList()->get(2).asDouble());
-            mutex.lock();
             classifPosMap[labels[classObject]] = p;
-            mutex.unlock();
             classifScoreMap[labels[classObject]] = max_score;
 
             // send out the predicted label over the cropped region
@@ -235,8 +243,8 @@ bool ObjectRecognizerModule::updateModule()
 
             cv::rectangle(img_mat, tl, br, cv::Scalar(0,255,0),2);
             cv::putText(img_mat,labels[classObject].c_str(),cv::Point(x_text,y_text), cv::FONT_HERSHEY_SIMPLEX, 2, cv::Scalar(0,255,0), 4);
-
         }
+        mutex.unlock();
     }
     else{ // if we are in unit test mode then we take a fixed crop radius
         // extract the crop: init variables
