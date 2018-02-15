@@ -1,5 +1,4 @@
 #include "objectRecognizerModule.h"
-#include "objectRecognizerPort.h"
 
 int main(int argc, char *argv[]){
 

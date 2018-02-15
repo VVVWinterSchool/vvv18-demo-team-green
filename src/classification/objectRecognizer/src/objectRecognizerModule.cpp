@@ -8,46 +8,13 @@ using namespace yarp::math;
 
 ObjectRecognizerModule::ObjectRecognizerModule()
 {
-    imagePort = NULL;
     voiceCommandTriggered = false;
 
     caffe_wrapper = NULL;
 
-    // labels
-    string label_file = rf.check("label_file", Value("/path/to/labels.txt")).asString().c_str();;
-    cout << "Setting labels.txt to " << label_file << endl;
+    n_classes = 0;
 
-    ifstream infile;
-
-    string obj_name;
-    vector<string> obj_names;
-    int obj_idx;
-    vector<int> obj_idxs;
-
-    infile.open (label_file.c_str());
-    infile >> obj_name;
-    infile >> obj_idx;
-    while (!infile.eof()) {
-        std::cout << obj_name << " --> "<< obj_idx << std::endl;
-        obj_names.push_back(obj_name);
-        obj_idxs.push_back(obj_idx);
-        infile >> obj_name;
-        infile >> obj_idx;
-    }
-    infile.close();
-
-    if (obj_names.size()!=obj_idxs.size())
-    {
-        std::cout << "label_file wrongly formatted!" << std::endl;
-    }
-
-    n_classes = obj_names.size();
-
-    labels = new string[n_classes];
-    for (int i=0; i<n_classes; i++)
-    {
-        labels[obj_idxs[i]] = obj_names[i];
-    }
+    labels = NULL;
 
     // colors
     colors.push_back(cv::Scalar( 65, 47,213));
@@ -91,12 +58,48 @@ bool ObjectRecognizerModule::configure(ResourceFinder &rf)
         blob_name,
         compute_mode, device_id);
 
+    // labels
+    string label_file = rf.check("label_file", Value("/path/to/labels.txt")).asString().c_str();;
+    cout << "Setting labels.txt to " << label_file << endl;
+
+    ifstream infile;
+
+    string obj_name;
+    vector<string> obj_names;
+    int obj_idx;
+    vector<int> obj_idxs;
+
+    infile.open (label_file.c_str());
+    infile >> obj_name;
+    infile >> obj_idx;
+    while (!infile.eof()) {
+        std::cout << obj_name << " --> "<< obj_idx << std::endl;
+        obj_names.push_back(obj_name);
+        obj_idxs.push_back(obj_idx);
+        infile >> obj_name;
+        infile >> obj_idx;
+    }
+    infile.close();
+
+    if (obj_names.size()!=obj_idxs.size())
+    {
+        std::cout << "label_file wrongly formatted!" << std::endl;
+    }
+
+    n_classes = obj_names.size();
+
+    labels = new string[n_classes];
+    for (int i=0; i<n_classes; i++)
+    {
+        labels[obj_idxs[i]] = obj_names[i];
+    }
+
     // output and input ports
     if (!port_out_view.open(("/"+name+"/view:o").c_str()) ||
         !port_out_scores.open(("/"+name+"/scores:o").c_str()) ||
-        !positionOutport->open(("/"+name+"/position:o").c_str()) ||
-        !imageInport->open(("/"+name+"/camera:i").c_str()) ||
-        !segmentationInport->open(("/"+name+"/crops:i").c_str())){
+        !positionOutport.open(("/"+name+"/position:o").c_str()) ||
+        !imageInport.open(("/"+name+"/camera:i").c_str()) ||
+        !segmentationInport.open(("/"+name+"/crops:i").c_str())){
         return false;
     }
 
@@ -113,10 +116,10 @@ bool ObjectRecognizerModule::interruptModule()
 {
     port_out_view.interrupt();
     port_out_scores.interrupt();
-    positionOutport->interrupt();
+    positionOutport.interrupt();
 
-    imageInport->interrupt();
-    segmentationInport->interrupt();
+    imageInport.interrupt();
+    segmentationInport.interrupt();
     userPrefInport.interrupt();
 
     return true;
@@ -126,10 +129,10 @@ bool ObjectRecognizerModule::close()
 {
     port_out_view.close();
     port_out_scores.close();
-    positionOutport->close();
+    positionOutport.close();
 
-    imageInport->close();
-    segmentationInport->close();
+    imageInport.close();
+    segmentationInport.close();
     userPrefInport.close();
 
     delete[] labels;
@@ -140,8 +143,24 @@ bool ObjectRecognizerModule::close()
 bool ObjectRecognizerModule::respond(const Bottle &command, Bottle &reply)
 {
     voiceCommandTriggered = true;
+    string objClass_user = command.get(0).asString();
+    mutex.lock();
+    string response = "";
 
+    // if objects are in the field of view and that the user class is detected among them
+    if (!noObject && classifPosMap.find(objClass_user) != classifPosMap.end()){
+        response = "label_ok";
+        positionOutport.prepare() = *classifPosMap[objClass_user];
+        positionOutport.write();
+    }
+    else{
+        response = "label_invalid";
+    }
+    mutex.unlock();
 
+    reply.addString(response);
+
+    return true;
 }
 
 double ObjectRecognizerModule::getPeriod(){
@@ -151,22 +170,23 @@ double ObjectRecognizerModule::getPeriod(){
 bool ObjectRecognizerModule::updateModule()
 {
     // First we retrieve the bounded box (and the position) of the two objects for classification
-    Bottle* box_pos = segmentationInport->read();
+    Bottle* box_pos = segmentationInport.read();
 
     if (!FLAG_UNIT_TEST){ // we get the bounded boxes from segmentation module
         if (box_pos == NULL){
-            mutex->lock();
+            mutex.lock();
             noObject = true;
-            mutex->unlock();
+            mutex.unlock();
             return false;
         }
-        mutex->lock();
+        mutex.lock();
         noObject = false;
-        mutex->unlock();
+        mutex.unlock();
     }
 
     // if there are any objects to classify, we get the current frame
-    Image* img = imageInport->read();
+    yarp::sig::ImageOf<yarp::sig::PixelRgb> *img = imageInport.read();
+
     if (img == NULL){
         return false;
     }
@@ -174,27 +194,38 @@ bool ObjectRecognizerModule::updateModule()
     cv::cvtColor(img_mat, img_mat, CV_RGB2BGR); // convert from RGB to BGR
     cv::Mat img_crop_mat = cv::Mat(RADIUS,RADIUS,CV_8UC3); // future cropped image
 
+    cv::Point tl(0,0);
+    cv::Point br(0,0);
+    bool ok = true;
+
     // Crop the images around objects and classify the objects
     if (!FLAG_UNIT_TEST){ //
         int numObj = box_pos->size()/2;
-        cv::Point tl(0,0);
-        cv::Point br(0,0);
-        bool ok = true;
 
         for(int i=0; i<numObj; i++){
             tl.x = box_pos->get(i*2).asList()->get(0).asInt();
             tl.y = box_pos->get(i*2).asList()->get(1).asInt();
             br.x = box_pos->get(i*2).asList()->get(2).asInt();
             br.y = box_pos->get(i*2).asList()->get(3).asInt();
-            crop(img_mat, img_crop_mat, tl, br);
+            cropImage(img_mat, img_crop_mat, tl, br);
             float max_score = 0;
             int classObject = 0;
             ok = classify(img_crop_mat, max_score, classObject);
             if (!ok) return false;
-            mutex->lock();
+            mutex.lock();
             classifPosMap[labels[classObject]] = box_pos->get(i*2+1).asList();
-            mutex->unlock();
+            mutex.unlock();
             classifScoreMap[labels[classObject]] = max_score;
+
+            // send out the predicted label over the cropped region
+            int y_text, x_text;
+            y_text = tl.y-10;
+            x_text = tl.x;
+            if (y_text<5) y_text = br.y+2;
+
+            cv::rectangle(img_mat, tl, br, cv::Scalar(0,255,0),2);
+            cv::putText(img_mat,labels[classObject].c_str(),cv::Point(x_text,y_text), cv::FONT_HERSHEY_SIMPLEX, 2, cv::Scalar(0,255,0), 4);
+
         }
     }
     else{ // if we are in unit test mode then we take a fixed crop radius
@@ -218,61 +249,57 @@ bool ObjectRecognizerModule::updateModule()
             br.y = y+r;
         }
         // crop and classify
-        crop(img_mat, img_crop_mat, tl, br);
+        cropImage(img_mat, img_crop_mat, tl, br);
         float max_score = 0;
         int classObject = 0;
         ok = classify(img_crop_mat, max_score, classObject);
         if (!ok) return false;
         classifScoreMap[labels[classObject]] = max_score;
+
+        // send out the predicted label over the cropped region
+        int y_text, x_text;
+        y_text = tl.y-10;
+        x_text = tl.x;
+        if (y_text<5) y_text = br.y+2;
+
+        cv::rectangle(img_mat, tl, br, cv::Scalar(0,255,0),2);
+        cv::putText(img_mat,labels[classObject].c_str(),cv::Point(x_text,y_text), cv::FONT_HERSHEY_SIMPLEX, 2, cv::Scalar(0,255,0), 4);
+
     }
 
-    // prepare outputs
-    Stamp stamp;
-    this->getEnvelope(stamp);
-
-    // send out the scores
+    // send the classification results
     if (port_out_scores.getOutputCount())
     {
         Bottle scores_bottle;
-        for (int i=0; i<scores.size(); i++)
+        std::map<std::string, float>::iterator it = classifScoreMap.begin();
+        while(it != classifScoreMap.end())
         {
+            // send out the scores
             Bottle &b = scores_bottle.addList();
-            b.addString(labels[i].c_str());
-            b.addDouble(scores[i]);
+            b.addString(it->first.c_str());
+            b.addDouble((double)it->second);
+            it++;
         }
         port_out_scores.write(scores_bottle);
     }
-    // FLAG: TRUE ok but FLAG: FALSE
-    // send out the predicted label over the cropped region
-    if (port_out_view.getOutputCount())
-    {
-        int y_text, x_text;
-        y_text = tly-10;
-        x_text = tlx;
-        if (y_text<5)
-        y_text = bry+2;
-
-        cv::cvtColor(img_mat, img_mat, CV_RGB2BGR);
-        cv::rectangle(img_mat,cv::Point(tlx,tly),cv::Point(brx,bry),cv::Scalar(0,255,0),2);
-        cv::putText(img_mat,labels[max_idx].c_str(),cv::Point(x_text,y_text), cv::FONT_HERSHEY_SIMPLEX, 2, cv::Scalar(0,255,0), 4);
-
-        port_out_view.write(img);
-    }
-
-    mutex.unlock();
+    yarp::sig::ImageOf<yarp::sig::PixelRgb> &outImage  = port_out_view.prepare();
+    IplImage out = img_mat;
+    outImage.resize(out.width, out.height);
+    cvCopy( &out, (IplImage *) outImage.getIplImage());
+    port_out_view.write();
 
     return true;
 
 }
 
-bool ObjectRecognizer::cropImage(const cv::Mat& in_image, cv::Mat& out_image, cv::Point tl, cv::Point br){
+bool ObjectRecognizerModule::cropImage(const cv::Mat& in_image, cv::Mat& out_image, cv::Point tl, cv::Point br){
     cv::Rect img_ROI = cv::Rect(tl, br);
     out_image.resize(img_ROI.width, img_ROI.height);
     in_image(img_ROI).copyTo(out_image);
     return true;
 }
 
-bool ObjectRecognizer::classify(const cv::Mat& image_cropped, float& max_score, int& classObject){
+bool ObjectRecognizerModule::classify(cv::Mat& image_cropped, float& max_score, int& classObject){
     std::vector<float> scores;
 
     // run classification with caffe

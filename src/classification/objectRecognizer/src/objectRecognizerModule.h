@@ -36,7 +36,6 @@
 
 #include "CaffeWrapper.hpp"
 #include "definitions.h"
-#include "objectRecognizerPort.h"
 
 using namespace std;
 using namespace yarp;
@@ -51,16 +50,16 @@ class ObjectRecognizerModule: public RFModule
 {
     protected:
 
-        Semaphore              mutex;
+        yarp::os::Mutex        mutex;
         bool                   voiceCommandTriggered;
         bool                   noObject;
 
-        BufferedPort<Image>    *imageInport;
-        BufferedPort<Bottle>   *segmentationInport;
+        yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> > imageInport;
+        BufferedPort<Bottle>   segmentationInport;
         RpcServer               userPrefInport;
 
-        BufferedPort<Bottle>   *positionOutport;
-        Port                   port_out_view;
+        BufferedPort<Bottle>   positionOutport;
+        yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> >  port_out_view;
         Port                   port_out_scores;
 
         CaffeWrapper<float>    *caffe_wrapper;
@@ -75,7 +74,7 @@ class ObjectRecognizerModule: public RFModule
         std::map<std::string, Bottle*> classifPosMap;
         std::map<std::string, float> classifScoreMap;
 
-        bool classify(const cv::Mat& image_cropped, float& max_score, int& classObject);
+        bool classify(cv::Mat& image_cropped, float& max_score, int& classObject);
         bool cropImage(const cv::Mat& in_image, cv::Mat& out_image, cv::Point tl, cv::Point br);
 
     public:
