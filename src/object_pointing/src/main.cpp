@@ -296,7 +296,7 @@ public:
         //
         Property option;
         option.put("device","cartesiancontrollerclient");
-        option.put("remote","/icubSim/cartesianController/right_arm");
+        option.put("remote","/icub/cartesianController/right_arm");
         option.put("local","/cartesian_client/right_arm");
         yDebug()<<"cartesian control property OK";
 
