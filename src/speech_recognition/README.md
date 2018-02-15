@@ -2,6 +2,9 @@
 
 This module is based on the module *[yarp.js](https://github.com/robotology/yarp.js)*
 
+In order to run properly: <span style="color:red">node.js need to be installed</span> ( [installation instruction](https://github.com/vvv-school/vvv18-demo-team-green/tree/master/src/speech_recognition/yarpjs)).
+
+
 This mode run locally a node.js server and display a webpage [http://localhost:3000](http://localhost:3000)
 
 *Ports*
