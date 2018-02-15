@@ -7,7 +7,7 @@ bool Module::configure(yarp::os::ResourceFinder &rf)
     setName(moduleName.c_str());
     inDispPort = new CustomProcessor(moduleName);
     closing = false;
-    inDispPort->threshold_value = 70;
+    inDispPort->threshold_value = 50;
 
     rpcPort.open("/" + moduleName + "/service");
     attach(rpcPort);
@@ -88,7 +88,7 @@ void CustomProcessor::interrupt()
 void CustomProcessor::onRead(yarp::sig::ImageOf<yarp::sig::PixelMono> &dispImage )
 {
     yarp::sig::ImageOf<yarp::sig::PixelRgb> &outDebugRGB = outDebugPortRGB.prepare();
-    yarp::sig::ImageOf<yarp::sig::PixelRgb> *inRGB = inRGBPort.read();
+    //yarp::sig::ImageOf<yarp::sig::PixelRgb> *inRGB = inRGBPort.read();
     yarp::os::Bottle &outBottle = outStuffPort.prepare();
 
     outDebugRGB.resize(dispImage.width(),dispImage.height());
@@ -104,15 +104,23 @@ void CustomProcessor::onRead(yarp::sig::ImageOf<yarp::sig::PixelMono> &dispImage
     cv::threshold(processed_disp,processed_disp,threshold_value,255,cv::THRESH_BINARY);
 
     // fix morphology of the blobs
-    cv::dilate(processed_disp,processed_disp,cv::Mat(),cv::Point(-1,-1),2, cv::BORDER_CONSTANT, cv::morphologyDefaultBorderValue());
-    cv::erode(processed_disp,processed_disp,cv::Mat(),cv::Point(-1,-1),3,cv::BORDER_CONSTANT, cv::morphologyDefaultBorderValue());
+    cv::erode(processed_disp,processed_disp, cv::Mat(), cv::Point(-1,-1), 2);
+    cv::dilate(processed_disp,processed_disp,cv::Mat(),cv::Point(-1,-1),3, cv::BORDER_CONSTANT, cv::morphologyDefaultBorderValue());
+    //cv::erode(processed_disp,processed_disp,cv::Mat(),cv::Point(-1,-1),3,cv::BORDER_CONSTANT, cv::morphologyDefaultBorderValue());
 
     //  find blob contours
     std::vector<std::vector<cv::Point> > contours;
-    cv::findContours(processed_disp,contours,CV_RETR_LIST,CV_CHAIN_APPROX_NONE);
+    cv::findContours(processed_disp.clone(),contours,CV_RETR_EXTERNAL,CV_CHAIN_APPROX_NONE);
 
     //  convert the processed disp map to rgb
     cv::cvtColor(processed_disp,processed_disp,CV_GRAY2RGB);
+
+    //  display all the bounding boxes
+    for (int i=0; i<contours.size(); i++)
+    {
+        cv::Rect b_box = cv::boundingRect(contours[i]);
+        cv::rectangle(processed_disp, b_box, cv::Scalar(0, 255, 255), 2);
+    }
 
     //  init structures to contain bounding boxes
     cv::Rect bounding_box_1;
@@ -132,9 +140,6 @@ void CustomProcessor::onRead(yarp::sig::ImageOf<yarp::sig::PixelMono> &dispImage
     {
         bounding_box_1 = cv::boundingRect(contours[0]);
         bounding_box_2 = cv::boundingRect(contours[1]);
-
-        cv::rectangle(processed_disp, bounding_box_1, cv::Scalar(0,255,0), 3);
-        cv::rectangle(processed_disp, bounding_box_2, cv::Scalar(0,0,255), 3);
 
         //  prepare some data for output stream
 
@@ -208,12 +213,14 @@ void CustomProcessor::onRead(yarp::sig::ImageOf<yarp::sig::PixelMono> &dispImage
     else
     {
         // detect timeout
-        if (valid_detection_timer - yarp::os::Time::now() <= 0)
+        if (yarp::os::Time::now() - valid_detection_timer > valid_detection_timer_threshold)
         {
             // signal the timeout ONCE
-            yarp::os::Bottle b =  detection_timeout.prepare();
+            yarp::os::Bottle &b =  detection_timeout.prepare();
+            b.clear();
             b.addInt(-1);
             detection_timeout.write();
+            yDebug() << "Timeout! Show me 2 objects...";
             // clear timer
             valid_detection_timer =yarp::os::Time::now();
 
