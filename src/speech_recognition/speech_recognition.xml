@@ -28,19 +28,24 @@
       <node>localhost</node>
   	</module>
   	
+	<connection>
+    	<from>/userPreference/control/rpc:o</from>
+    	<to>/userPreference/control/rpc:i</to>
+    	<protocol>tcp</protocol>
+	</connection>
+  	
     <connection>
-    <from>/yarpjs/speech/rec:o</from>
-    <to>/userPreference/text_from_speech:i</to>
-    <protocol>tcp</protocol>
-</connection>
+			<from>/yarpjs/speech/rec:o</from>
+			<to>/userPreference/text_from_speech:i</to>
+			<protocol>tcp</protocol>
+	</connection>
 
-<connection>
-    <from>/userPreference/user_label/rpc:o</from>
-    <to>/objectRecognizer/userLabel/rpc:i </to>
-    <protocol>tcp</protocol>
-</connection>
+	<connection>
+		<from>/userPreference/user_label/rpc:o</from>
+		<to>/objectRecognizer/userLabel/rpc:i </to>
+		<protocol>tcp</protocol>
+	</connection>
   
-
 
 
 </application>
