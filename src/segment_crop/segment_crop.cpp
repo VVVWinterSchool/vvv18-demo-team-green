@@ -57,6 +57,8 @@ CustomProcessor::CustomProcessor(const std::string &moduleName)
 {
     this->moduleName = moduleName;
     queryClient.open("/"+moduleName+"/rpcSFM");
+    valid_detection_timer_threshold = 10.0;
+    valid_detection_timer = yarp::os::Time::now();
 }
 
 bool CustomProcessor::open()
@@ -66,12 +68,14 @@ bool CustomProcessor::open()
     //inRGBPort.open("/" + moduleName + "/RGBimage:i");
     outStuffPort.open("/"+ moduleName + "/crops:o");
     outDebugPortRGB.open("/"+ moduleName + "/debugRGB:o");
+    detection_timeout.open("/" + moduleName + "/valid_detection:o");
 }
 
 void CustomProcessor::close()
 {
     outDebugPortRGB.close();
     outStuffPort.close();
+    detection_timeout.close();
     //inRGBPort.close();
     this->BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelMono> >::close();
 }
@@ -93,25 +97,37 @@ void CustomProcessor::onRead(yarp::sig::ImageOf<yarp::sig::PixelMono> &dispImage
     cv::Mat disp = cv::cvarrToMat((IplImage*)dispImage.getIplImage());
     cv::Mat processed_disp = disp.clone();
 
+    // blur the disparity map to soften edges
     cv::GaussianBlur(processed_disp,processed_disp,cv::Size(3, 3),2,2);
-    cv::dilate(processed_disp,processed_disp,cv::Mat(),cv::Point(-1,-1),3, cv::BORDER_CONSTANT, cv::morphologyDefaultBorderValue());
-    cv::erode(processed_disp,processed_disp,cv::Mat(),cv::Point(-1,-1),3,cv::BORDER_CONSTANT, cv::morphologyDefaultBorderValue());
 
+    // threshold the disp map to obtain bin image
     cv::threshold(processed_disp,processed_disp,threshold_value,255,cv::THRESH_BINARY);
 
+    // fix morphology of the blobs
+    cv::dilate(processed_disp,processed_disp,cv::Mat(),cv::Point(-1,-1),2, cv::BORDER_CONSTANT, cv::morphologyDefaultBorderValue());
+    cv::erode(processed_disp,processed_disp,cv::Mat(),cv::Point(-1,-1),3,cv::BORDER_CONSTANT, cv::morphologyDefaultBorderValue());
+
+    //  find blob contours
     std::vector<std::vector<cv::Point> > contours;
     cv::findContours(processed_disp,contours,CV_RETR_LIST,CV_CHAIN_APPROX_NONE);
 
+    //  convert the processed disp map to rgb
+    cv::cvtColor(processed_disp,processed_disp,CV_GRAY2RGB);
+
+    //  init structures to contain bounding boxes
     cv::Rect bounding_box_1;
     cv::Rect bounding_box_2;
+
     yarp::sig::Vector centre_1;
     yarp::sig::Vector centre_2;
-    yarp::sig::Vector  object_1;
-    yarp::sig::Vector  object_2;
-
     centre_1.resize(2);
     centre_2.resize(2);
 
+    //  init vector of 3D object centers
+    yarp::sig::Vector  object_1;
+    yarp::sig::Vector  object_2;
+
+    //  detecting 2 contours means 2 objects are being shown. Otherwise, no coordinate stream happens
     if(contours.size() == 2 )
     {
         bounding_box_1 = cv::boundingRect(contours[0]);
@@ -119,6 +135,8 @@ void CustomProcessor::onRead(yarp::sig::ImageOf<yarp::sig::PixelMono> &dispImage
 
         cv::rectangle(processed_disp, bounding_box_1, cv::Scalar(0,255,0), 3);
         cv::rectangle(processed_disp, bounding_box_2, cv::Scalar(0,0,255), 3);
+
+        //  prepare some data for output stream
 
         centre_1[0] = (bounding_box_1.tl().x + bounding_box_1.br().x)/2;
         centre_1[1] = (bounding_box_1.tl().y + bounding_box_1.br().y)/2;
@@ -146,6 +164,8 @@ void CustomProcessor::onRead(yarp::sig::ImageOf<yarp::sig::PixelMono> &dispImage
         object_2.push_back(response.get(4).asDouble());
         object_2.push_back(response.get(5).asDouble());
 
+        //  if disparity map has some errors, the object positions will not be valid
+        //  in this case, nothing is streamed
         if (object_1[0] < -0.2 && object_2[0] < -0.2)
         {
             yarp::os::Bottle listObj1_Rect;
@@ -182,15 +202,25 @@ void CustomProcessor::onRead(yarp::sig::ImageOf<yarp::sig::PixelMono> &dispImage
 
             outStuffPort.write();
 
+            valid_detection_timer = yarp::os::Time::now();
         }
+    }
+    else
+    {
+        // detect timeout
+        if (valid_detection_timer - yarp::os::Time::now() <= 0)
+        {
+            // signal the timeout ONCE
+            yarp::os::Bottle b =  detection_timeout.prepare();
+            b.addInt(-1);
+            detection_timeout.write();
+            // clear timer
+            valid_detection_timer =yarp::os::Time::now();
 
-
+        }
     }
 
-    cv::cvtColor(processed_disp,processed_disp,CV_GRAY2RGB);
-
-    //cv::rectangle(disp,cv::Rect(disp.cols/2, disp.rows/2, disp.cols/2 + disp.cols/4, disp.rows/2 + disp.rows/4),cv::Scalar(255,0,0));
-
+    //  prepare debug disp map and stream it
     cv::resize(processed_disp,processed_disp,cv::Size(outDebugRGB.width(),outDebugRGB.height()));
     IplImage out = processed_disp;
 

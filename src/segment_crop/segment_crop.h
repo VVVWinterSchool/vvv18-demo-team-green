@@ -17,14 +17,16 @@
 class CustomProcessor : public yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelMono> >
 {
     std::string moduleName;
-    yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> >    inRGBPort;
-    yarp::os::BufferedPort<yarp::os::Bottle>                            outStuffPort;
-    yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> >    outDebugPortRGB;
+    yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> >    inRGBPort;                     // if we ever need rgb image in
+    yarp::os::BufferedPort<yarp::os::Bottle>                            outStuffPort;                  // to stream object positions out
+    yarp::os::BufferedPort<yarp::sig::ImageOf<yarp::sig::PixelRgb> >    outDebugPortRGB;               // output port from debugging
+    yarp::os::BufferedPort<yarp::os::Bottle>                            detection_timeout;             // signal when timeout
+
+    double valid_detection_timer, valid_detection_timer_threshold;
 
 public:
     int                             threshold_value;
     yarp::os::RpcClient             queryClient;
-
 
     CustomProcessor(const std::string &moduleName);
     bool open();
